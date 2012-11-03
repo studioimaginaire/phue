@@ -5,6 +5,8 @@ import json
 import os
 import time
 
+# Original protocol hacking by rsmck : http://rsmck.co.uk/hue
+
 class Hue:
     def __init__(self, bridge_ip):
         self.config_file = os.path.join(os.getenv("HOME"),'.python_hue')
