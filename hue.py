@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import urllib2
+import httplib
 import json
 import os
 import time
@@ -12,6 +13,7 @@ class Hue:
         self.config_file = os.path.join(os.getenv("HOME"),'.python_hue')
         self.bridge_ip = bridge_ip
         self.bridge_api_url = 'http://' + self.bridge_ip + '/api/'
+        self.username = None
     
     def register_app(self):
         registration_request = {"username": "python_hue", "devicetype": "python_hue"}
@@ -34,16 +36,20 @@ class Hue:
         try:
             print 'Attempting to connect to the bridge'
             with open(self.config_file) as f:
-                username =  json.loads(f.read())[self.bridge_ip]['username']
-                print 'Using username: ' + username
-                self.get_bridge_information(username)
+                self.username =  json.loads(f.read())[self.bridge_ip]['username']
+                print 'Using username: ' + self.username
         
         except Exception as e:
-            print e
             print 'Error opening config file, will attempt bridge registration'
             self.register_app()
     
-    def get_bridge_information(self, username):
-        u = urllib2.urlopen(self.bridge_api_url + username)
+    def get_bridge_information(self):
+        u = urllib2.urlopen(self.bridge_api_url + self.username)
         for line in u.readlines():
             print json.dumps(json.loads(line), indent=4)
+
+    def set_brightness(self, lamp_id, brightness):
+        data = {'bri' : brightness}
+        connection = httplib.HTTPConnection(self.bridge_ip + ':80')
+        connection.request('PUT', '/api/' + self.username + '/lights/'+ str(lamp_id) + '/state', json.dumps(data))
+        result = connection.getresponse()
