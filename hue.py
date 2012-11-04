@@ -43,13 +43,21 @@ class Hue:
             print 'Error opening config file, will attempt bridge registration'
             self.register_app()
     
-    def get_bridge_information(self):
-        u = urllib2.urlopen(self.bridge_api_url + self.username)
+    
+    # With no arguments, prints the whole bridge information, with a lamp_id, prints the lamp information.
+    def get_info(self, lamp_id = None):
+        if lamp_id != None:
+            u = urllib2.urlopen(self.bridge_api_url + self.username + '/lights/' + str(lamp_id))
+        else:
+            u = urllib2.urlopen(self.bridge_api_url + self.username)
         for line in u.readlines():
             print json.dumps(json.loads(line), indent=4)
 
-    def set_brightness(self, lamp_id, brightness):
-        data = {'bri' : brightness}
+    # parameters: 'on' : True|False , 'bri' : 0-254, 'sat' : 0-254, 'ct': 154-500
+    def set_state(self, lamp_id, parameter, value):
+        data = {parameter : value}
         connection = httplib.HTTPConnection(self.bridge_ip + ':80')
         connection.request('PUT', '/api/' + self.username + '/lights/'+ str(lamp_id) + '/state', json.dumps(data))
         result = connection.getresponse()
+        print result.read()
+    
