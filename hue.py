@@ -53,11 +53,16 @@ class Hue:
         for line in u.readlines():
             print json.dumps(json.loads(line), indent=4)
 
+    # lamp_id can be a single lamp or an array or lamps
     # parameters: 'on' : True|False , 'bri' : 0-254, 'sat' : 0-254, 'ct': 154-500
     def set_state(self, lamp_id, parameter, value):
         data = {parameter : value}
         connection = httplib.HTTPConnection(self.bridge_ip + ':80')
-        connection.request('PUT', '/api/' + self.username + '/lights/'+ str(lamp_id) + '/state', json.dumps(data))
-        result = connection.getresponse()
-        print result.read()
+        lamp_id_array = lamp_id
+        if type(lamp_id) == int:
+            lamp_id_array = [lamp_id]
+        for lamp in lamp_id_array:
+            connection.request('PUT', '/api/' + self.username + '/lights/'+ str(lamp) + '/state', json.dumps(data))
+            result = connection.getresponse()
+            print result.read()
     
