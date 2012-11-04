@@ -4,7 +4,6 @@ import urllib2
 import httplib
 import json
 import os
-import time
 
 # Original protocol hacking by rsmck : http://rsmck.co.uk/hue
 
