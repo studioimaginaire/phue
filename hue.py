@@ -23,73 +23,73 @@ class Bulb(object):
     
     @property
     def name(self):
-        self._name = self.bridge.get_state(self.light_id)['name']
+        self._name = self.bridge.get_state(self.light_id, 'name')
         return self._name
 
     @name.setter
     def name(self, value):
         self._name = value
-        self.bridge.set_state(self.light_id, "name", self._name)
+        self.bridge.set_state(self.light_id, 'name', self._name)
 
     @property
     def on(self):
-        self._on = self.bridge.get_state(self.light_id)['state']['on']
+        self._on = self.bridge.get_state(self.light_id, 'on')
         return self._on
 
     @on.setter
     def on(self, value):
         self._on = value
-        self.bridge.set_light_state(self.light_id, "on", self._on)
+        self.bridge.set_state(self.light_id, 'on', self._on)
 
     @property
     def brightness(self):
-        self._brightness = self.bridge.get_state(self.light_id)['state']['bri']
+        self._brightness = self.bridge.get_state(self.light_id, 'bri')
         return self._brightness
 
     @brightness.setter
     def brightness(self, value):
         self._brightness = value
-        self.bridge.set_light_state(self.light_id, "bri", self._brightness)
+        self.bridge.set_state(self.light_id, 'bri', self._brightness)
     
     @property
     def hue(self):
-        self._hue = self.bridge.get_state(self.light_id)['state']['hue']
+        self._hue = self.bridge.get_state(self.light_id, 'hue')
         return self._hue
 
     @hue.setter
     def hue(self, value):
         self._hue = value
-        self.bridge.set_light_state(self.light_id, "hue", self._hue)
+        self.bridge.set_state(self.light_id, 'hue', self._hue)
 
     @property
     def saturation(self):
-        self._saturation = self.bridge.get_state(self.light_id)['state']['sat']
+        self._saturation = self.bridge.get_state(self.light_id, 'sat')
         return self._saturation
 
     @saturation.setter
     def saturation(self, value):
         self._saturation = value
-        self.bridge.set_light_state(self.light_id, "sat", self._saturation)
+        self.bridge.set_state(self.light_id, 'sat', self._saturation)
 
     @property
     def xy(self):
-        self._xy = self.bridge.get_state(self.light_id)['state']['xy']
+        self._xy = self.bridge.get_state(self.light_id, 'xy')
         return self._xy
 
     @xy.setter
     def xy(self, value):
         self._xy = value
-        self.bridge.set_light_state(self.light_id, "xy", self._xy)
+        self.bridge.set_state(self.light_id, 'xy', self._xy)
 
     @property
     def colortemp(self):
-        self._colortemp = self.bridge.get_state(self.light_id)['state']['ct']
+        self._colortemp = self.bridge.get_state(self.light_id, 'ct')
         return self._colortemp
 
     @colortemp.setter
     def colortemp(self, value):
         self._colortemp = value
-        self.bridge.set_light_state(self.light_id, "ct", self._colortemp)
+        self.bridge.set_state(self.light_id, 'ct', self._colortemp)
 
 class Bridge(object):
     def __init__(self, bridge_ip):
@@ -137,32 +137,35 @@ class Bridge(object):
             self.bulbs[int(bulb)] = Bulb(self, int(bulb))
             self.bulbs[bulbs[bulb]['name']] = self.bulbs[int(bulb)] 
     
-    # Sets the global parameters of the light (the name mainly)
-    def get_state(self, light_id = None):
-        if light_id != None:
-            u = urllib2.urlopen(self.bridge_api_url + self.username + '/lights/' + str(light_id))
-        else:
-            u = urllib2.urlopen(self.bridge_api_url + self.username)
+    # Return the dictionary of the whole bridge
+    def get_info(self):
+        u = urllib2.urlopen(self.bridge_api_url + self.username)
         for line in u.readlines():
             return json.loads(line)            
 
-    def set_state(self, light_id, parameter, value):
-        data = {parameter : value}
-        connection = httplib.HTTPConnection(self.bridge_ip + ':80')
-        connection.request('PUT', '/api/' + self.username + '/lights/'+ str(light_id), json.dumps(data))
-        result = connection.getresponse()
-        print result.read()
+    # Gets state by light_id and parameter
+    def get_state(self, light_id, parameter):
+        u = urllib2.urlopen(self.bridge_api_url + self.username +  '/lights/' + str(light_id))
+        converted = json.loads(u.read())
+        if parameter == 'name':
+            return converted[parameter]
+        else:
+            return converted['state'][parameter]
+
 
     # light_id can be a single lamp or an array or lamps
     # parameters: 'on' : True|False , 'bri' : 0-254, 'sat' : 0-254, 'ct': 154-500
-    def set_light_state(self, light_id, parameter, value):
+    def set_state(self, light_id, parameter, value):
         data = {parameter : value}
         connection = httplib.HTTPConnection(self.bridge_ip + ':80')
         light_id_array = light_id
         if type(light_id) == int:
             light_id_array = [light_id]
         for light in light_id_array:
-            connection.request('PUT', '/api/' + self.username + '/lights/'+ str(light) + '/state', json.dumps(data))
+            if parameter  == 'name':
+                connection.request('PUT', '/api/' + self.username + '/lights/'+ str(light_id), json.dumps(data))
+            else:
+                connection.request('PUT', '/api/' + self.username + '/lights/'+ str(light) + '/state', json.dumps(data))
             result = connection.getresponse()
             print result.read()
 
