@@ -115,7 +115,7 @@ class Bridge(object):
                     self.connect()
                 if 'error' in l:
                     if l['error']['type'] == 101:
-                        print 'Please press button on bridge to register application'
+                        print 'Please press button on bridge to register application and call connect() method'
                     #if l['error']['type'] == 7:
                         #print 'Unknown username'
     def connect(self):
@@ -155,8 +155,11 @@ class Bridge(object):
 
     # light_id can be a single lamp or an array or lamps
     # parameters: 'on' : True|False , 'bri' : 0-254, 'sat' : 0-254, 'ct': 154-500
-    def set_state(self, light_id, parameter, value):
-        data = {parameter : value}
+    def set_state(self, light_id, parameter, value = None):
+        if type(parameter) == dict:
+            data = parameter
+        else:
+            data = {parameter : value}
         connection = httplib.HTTPConnection(self.bridge_ip + ':80')
         light_id_array = light_id
         if type(light_id) == int:
@@ -168,5 +171,16 @@ class Bridge(object):
                 connection.request('PUT', '/api/' + self.username + '/lights/'+ str(light) + '/state', json.dumps(data))
             result = connection.getresponse()
             print result.read()
+
+    def set_raw(self, light_id,  data):
+        connection = httplib.HTTPConnection(self.bridge_ip + ':80')
+        light_id_array = light_id
+        if type(light_id) == int:
+            light_id_array = [light_id]
+        for light in light_id_array:
+            connection.request('PUT', '/api/' + self.username + '/lights/'+ str(light) + '/state', json.dumps(data))
+            result = connection.getresponse()
+            print result.read()
+
 
 
