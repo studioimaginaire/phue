@@ -7,7 +7,7 @@ import os
 
 # Original protocol hacking by rsmck : http://rsmck.co.uk/hue
 
-class Bulb(object):
+class Light(object):
     def __init__(self, bridge, light_id):
         self.bridge = bridge
         self.light_id = light_id
@@ -20,7 +20,6 @@ class Bulb(object):
         self._xy = None
         self._colortemp = None
        
-    
     @property
     def name(self):
         self._name = self.bridge.get_state(self.light_id, 'name')
@@ -28,8 +27,12 @@ class Bulb(object):
 
     @name.setter
     def name(self, value):
+        old_name = self.name
         self._name = value
         self.bridge.set_state(self.light_id, 'name', self._name)
+        
+        self.bridge.lights[self.name] = self 
+        del self.bridge.lights[old_name]
 
     @property
     def on(self):
@@ -92,15 +95,32 @@ class Bulb(object):
         self.bridge.set_state(self.light_id, 'ct', self._colortemp)
 
 class Bridge(object):
-    def __init__(self, bridge_ip):
+    def __init__(self, bridge_ip, username = None):
         self.config_file = os.path.join(os.getenv("HOME"),'.python_hue')
         self.bridge_ip = bridge_ip
+        self.username = username
         self.bridge_api_url = 'http://' + self.bridge_ip + '/api/'
-        self.bulbs = {}
-        self.username = None
+        self.lights = {}
+        self._name = None
+
+        self.minutes = 600
+        self.seconds = 10
         
         self.connect()
     
+    @property
+    def name(self):
+        self._name = json.loads(urllib2.urlopen(self.bridge_api_url + self.username +'/config').read())['name']
+        return self._name
+    
+    @name.setter
+    def name(self, value):
+        self._name = value
+        data = {'name' : self._name}
+        connection = httplib.HTTPConnection(self.bridge_ip + ':80')
+        connection.request('PUT', '/api/' + self.username + '/config', json.dumps(data))
+        print connection.getresponse().read()
+
     def register_app(self):
         registration_request = {"username": "python_hue", "devicetype": "python_hue"}
         data = json.dumps(registration_request)
@@ -119,23 +139,29 @@ class Bridge(object):
                     #if l['error']['type'] == 7:
                         #print 'Unknown username'
     def connect(self):
-        try:
-            print 'Attempting to connect to the bridge'
-            with open(self.config_file) as f:
-                self.username =  json.loads(f.read())[self.bridge_ip]['username']
-                print 'Using username: ' + self.username
-                print 'Getting bulb information...'
-                self.refresh_bulbs()
+        print 'Attempting to connect to the bridge'
+        if self.username == None:
+            try:
+                with open(self.config_file) as f:
+                    self.username =  json.loads(f.read())[self.bridge_ip]['username']
+                    print 'Using username: ' + self.username
+                    print 'Getting lights information...'
+                    self.refresh_lights()
         
-        except Exception as e:
-            print 'Error opening config file, will attempt bridge registration'
-            self.register_app()
+            except Exception as e:
+                print 'Error opening config file, will attempt bridge registration'
+                self.register_app()
+        else:
+            print 'Using username: ' + self.username
+            print 'Getting lights information...'
+            self.refresh_lights()
 
-    def refresh_bulbs(self):
-        bulbs =  json.loads(urllib2.urlopen(self.bridge_api_url + self.username + '/lights/').read())
-        for bulb in bulbs:
-            self.bulbs[int(bulb)] = Bulb(self, int(bulb))
-            self.bulbs[bulbs[bulb]['name']] = self.bulbs[int(bulb)] 
+    def refresh_lights(self):
+        self.lights = {}
+        lights =  json.loads(urllib2.urlopen(self.bridge_api_url + self.username + '/lights/').read())
+        for light in lights:
+            self.lights[int(light)] = Light(self, int(light))
+            self.lights[lights[light]['name']] = self.lights[int(light)] 
     
     # Return the dictionary of the whole bridge
     def get_info(self):
@@ -171,16 +197,5 @@ class Bridge(object):
                 connection.request('PUT', '/api/' + self.username + '/lights/'+ str(light) + '/state', json.dumps(data))
             result = connection.getresponse()
             print result.read()
-
-    def set_raw(self, light_id,  data):
-        connection = httplib.HTTPConnection(self.bridge_ip + ':80')
-        light_id_array = light_id
-        if type(light_id) == int:
-            light_id_array = [light_id]
-        for light in light_id_array:
-            connection.request('PUT', '/api/' + self.username + '/lights/'+ str(light) + '/state', json.dumps(data))
-            result = connection.getresponse()
-            print result.read()
-
 
 
