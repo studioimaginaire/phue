@@ -19,6 +19,7 @@ class Light(object):
         self._saturation = None
         self._xy = None
         self._colortemp = None
+        self._alert = None
        
     @property
     def name(self):
@@ -93,6 +94,16 @@ class Light(object):
     def colortemp(self, value):
         self._colortemp = value
         self.bridge.set_state(self.light_id, 'ct', self._colortemp)
+
+    @property
+    def alert(self):
+        self._colortemp = self.bridge.get_state(self.light_id, 'alert')
+        return self._alert
+
+    @alert.setter
+    def alert(self, value):
+        self._alert = value
+        self.bridge.set_state(self.light_id, 'alert', self._alert)
 
 class Bridge(object):
     def __init__(self, bridge_ip, username = None):
