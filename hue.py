@@ -31,8 +31,8 @@ class Light(object):
         self._name = value
         self.bridge.set_state(self.light_id, 'name', self._name)
         
-        self.bridge.lights[self.name] = self 
-        del self.bridge.lights[old_name]
+        self.bridge.lights_by_name[self.name] = self 
+        del self.bridge.lights_by_name[old_name]
 
     @property
     def on(self):
@@ -100,7 +100,8 @@ class Bridge(object):
         self.bridge_ip = bridge_ip
         self.username = username
         self.bridge_api_url = 'http://' + self.bridge_ip + '/api/'
-        self.lights = {}
+        self.lights_by_id = {}
+        self.lights_by_name = {}
         self._name = None
 
         self.minutes = 600
@@ -145,23 +146,25 @@ class Bridge(object):
                 with open(self.config_file) as f:
                     self.username =  json.loads(f.read())[self.bridge_ip]['username']
                     print 'Using username: ' + self.username
-                    print 'Getting lights information...'
-                    self.refresh_lights()
         
             except Exception as e:
                 print 'Error opening config file, will attempt bridge registration'
                 self.register_app()
         else:
             print 'Using username: ' + self.username
-            print 'Getting lights information...'
-            self.refresh_lights()
 
-    def refresh_lights(self):
-        self.lights = {}
-        lights =  json.loads(urllib2.urlopen(self.bridge_api_url + self.username + '/lights/').read())
-        for light in lights:
-            self.lights[int(light)] = Light(self, int(light))
-            self.lights[lights[light]['name']] = self.lights[int(light)] 
+    #Returns a dictionary containing the lights, either by name or id (use 'id' or 'name' as the mode)
+    def get_lights(self, mode):
+        if self.lights_by_id == {}:
+            lights =  json.loads(urllib2.urlopen(self.bridge_api_url + self.username + '/lights/').read())
+            for light in lights:
+                self.lights_by_id[int(light)] = Light(self, int(light))
+                self.lights_by_name[lights[light]['name']] = self.lights_by_id[int(light)]
+        if mode == 'id':
+            return self.lights_by_id
+        if mode == 'name':
+            return self.lights_by_name
+
     
     # Return the dictionary of the whole bridge
     def get_info(self):
