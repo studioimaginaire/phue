@@ -200,20 +200,18 @@ class Bridge(object):
             data = parameter
         else:
             data = {parameter : value}
-        connection = httplib.HTTPConnection(self.bridge_ip + ':80')
         light_id_array = light_id
         if type(light_id) == int:
             light_id_array = [light_id]
         for light in light_id_array:
             if parameter  == 'name':
-                connection.request('PUT', '/api/' + self.username + '/lights/'+ str(light_id), json.dumps(data))
+                self.request('PUT', '/api/' + self.username + '/lights/'+ str(light_id), json.dumps(data))
             else:
-                connection.request('PUT', '/api/' + self.username + '/lights/'+ str(light) + '/state', json.dumps(data))
-            result = connection.getresponse()
-            print result.read()
+                self.request('PUT', '/api/' + self.username + '/lights/'+ str(light) + '/state', json.dumps(data))
 
-    def request(self,  mode = 'GET', ip = self.bridge_ip, address = '/api/' + self.username, data = None):
-        connection = httplib.HTTPConnection(ip)
+
+    def request(self,  mode = 'GET', address = '/api/', data = None):
+        connection = httplib.HTTPConnection(self.bridge_ip)
         if mode == 'GET':
             connection.request(mode, address)
         if mode == 'PUT' or mode == 'POST':
@@ -221,5 +219,5 @@ class Bridge(object):
 
         result = connection.getresponse()
         connection.close()
-        return result.read()
+        return json.loads(result.read())
 
