@@ -212,4 +212,14 @@ class Bridge(object):
             result = connection.getresponse()
             print result.read()
 
+    def request(self,  mode = 'GET', ip = self.bridge_ip, address = '/api/' + self.username, data = None):
+        connection = httplib.HTTPConnection(ip)
+        if mode == 'GET':
+            connection.request(mode, address)
+        if mode == 'PUT' or mode == 'POST':
+            connection.request(mode, address, data)
+
+        result = connection.getresponse()
+        connection.close()
+        return result.read()
 
