@@ -5,6 +5,8 @@ import httplib
 import json
 import os
 
+# phue by Nathanaël Lécaudé - A Philips Hue Python library
+# https://github.com/studioimaginaire/phue
 # Original protocol hacking by rsmck : http://rsmck.co.uk/hue
 
 class Light(object):
@@ -110,7 +112,6 @@ class Bridge(object):
         self.config_file = os.path.join(os.getenv("HOME"),'.python_hue')
         self.bridge_ip = bridge_ip
         self.username = username
-        self.bridge_api_url = 'http://' + self.bridge_ip + '/api/'
         self.lights_by_id = {}
         self.lights_by_name = {}
         self._name = None
