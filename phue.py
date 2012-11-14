@@ -122,34 +122,43 @@ class Bridge(object):
     
     @property
     def name(self):
-        self._name = json.loads(urllib2.urlopen(self.bridge_api_url + self.username +'/config').read())['name']
+        self._name = self.request('GET', '/api/' + self.username + '/config')['name']
         return self._name
     
     @name.setter
     def name(self, value):
         self._name = value
         data = {'name' : self._name}
-        connection = httplib.HTTPConnection(self.bridge_ip + ':80')
-        connection.request('PUT', '/api/' + self.username + '/config', json.dumps(data))
-        print connection.getresponse().read()
+        self.request('PUT', '/api/' + self.username + '/config', json.dumps(data))
 
+    def request(self,  mode = 'GET', address = None, data = None):
+        connection = httplib.HTTPConnection(self.bridge_ip)
+        if mode == 'GET':
+            connection.request(mode, address)
+        if mode == 'PUT' or mode == 'POST':
+            connection.request(mode, address, data)
+
+        result = connection.getresponse()
+        connection.close()
+        return json.loads(result.read())
+    
     def register_app(self):
         registration_request = {"username": "python_hue", "devicetype": "python_hue"}
         data = json.dumps(registration_request)
-        u = urllib2.urlopen(self.bridge_api_url, data)
-        for line in u.readlines():
-            for l in json.loads(line):
-                if 'success' in l:
+        response = self.request('POST', '/api', data)
+        for line in response:
+            for key in line:
+                if 'success' in key:
                     with open(self.config_file, 'w') as f:
                         print 'Writing configuration file to ' + self.config_file
-                        f.write(json.dumps({self.bridge_ip : l['success']}))
+                        f.write(json.dumps({self.bridge_ip : line['success']}))
                         print 'Reconnecting to the bridge'
                     self.connect()
-                if 'error' in l:
-                    if l['error']['type'] == 101:
+                if 'error' in key:
+                    if line['error']['type'] == 101:
                         print 'Please press button on bridge to register application and call connect() method'
-                    #if l['error']['type'] == 7:
-                        #print 'Unknown username'
+                    if line['error']['type'] == 7:
+                        print 'Unknown username'
     def connect(self):
         print 'Attempting to connect to the bridge'
         if self.username == None:
@@ -167,7 +176,7 @@ class Bridge(object):
     #Returns a dictionary containing the lights, either by name or id (use 'id' or 'name' as the mode)
     def get_lights(self, mode):
         if self.lights_by_id == {}:
-            lights =  json.loads(urllib2.urlopen(self.bridge_api_url + self.username + '/lights/').read())
+            lights = self.request('GET', '/api/' + self.username + '/lights/')
             for light in lights:
                 self.lights_by_id[int(light)] = Light(self, int(light))
                 self.lights_by_name[lights[light]['name']] = self.lights_by_id[int(light)]
@@ -175,22 +184,21 @@ class Bridge(object):
             return self.lights_by_id
         if mode == 'name':
             return self.lights_by_name
+        if mode == 'list':
+            return [ self.lights_by_id[x] for x in range(1, len(self.lights_by_id) + 1) ]
 
     
     # Return the dictionary of the whole bridge
     def get_info(self):
-        u = urllib2.urlopen(self.bridge_api_url + self.username)
-        for line in u.readlines():
-            return json.loads(line)            
+        return self.request('GET', '/api/' + self.username)
 
     # Gets state by light_id and parameter
     def get_state(self, light_id, parameter):
-        u = urllib2.urlopen(self.bridge_api_url + self.username +  '/lights/' + str(light_id))
-        converted = json.loads(u.read())
+        state = self.request('GET', '/api/' + self.username + '/lights/' + str(light_id))
         if parameter == 'name':
-            return converted[parameter]
+            return state[parameter]
         else:
-            return converted['state'][parameter]
+            return state['state'][parameter]
 
 
     # light_id can be a single lamp or an array or lamps
@@ -205,19 +213,8 @@ class Bridge(object):
             light_id_array = [light_id]
         for light in light_id_array:
             if parameter  == 'name':
-                self.request('PUT', '/api/' + self.username + '/lights/'+ str(light_id), json.dumps(data))
+                return self.request('PUT', '/api/' + self.username + '/lights/'+ str(light_id), json.dumps(data))
             else:
-                self.request('PUT', '/api/' + self.username + '/lights/'+ str(light) + '/state', json.dumps(data))
+                return self.request('PUT', '/api/' + self.username + '/lights/'+ str(light) + '/state', json.dumps(data))
 
-
-    def request(self,  mode = 'GET', address = '/api/', data = None):
-        connection = httplib.HTTPConnection(self.bridge_ip)
-        if mode == 'GET':
-            connection.request(mode, address)
-        if mode == 'PUT' or mode == 'POST':
-            connection.request(mode, address, data)
-
-        result = connection.getresponse()
-        connection.close()
-        return json.loads(result.read())
 

@@ -15,7 +15,7 @@ Using the set_state() method you can control pretty much all the parameters :
 ```python
 #!/usr/bin/python
 
-from hue import Bridge
+from phue import Bridge
 
 b = Bridge('ip_of_your_bridge')
 
@@ -49,27 +49,34 @@ command =  {'transitiontime' : 300, 'on' : True, 'bri' : 254}
 b.set_state(1, command)
 ```
 
-If you want to work in a more object-oriented way, check the bulbs object,
-it's a dictionary containing Bulb objects that you can control, either by id or name.
+If you want to work in a more object-oriented way, you can get Light objects using the get_lights method. You can use 'id', 'name' or 'list' as argument.
 
 ```python
-# Get the name of bulb 1
-b.lights[1].name
+
+# Get a dictionary with the light ids as the key
+lights = b.get_lights['id']
+
+# Get the name of bulb 1, set the brightness to 127
+lights[1].name
+lights[1].brightness = 127
+
+# Get a dictionary with the light name as the key
+light_names = b.get_lights['name']
 
 # Set the birghtness of the bulb named "Kitchen"
-b.lights["Kitchen"].brightness = 254
-
-# Get lights 1 to 3
-lights =  [ b.lights[x] for x in [1,2,3] ]
-
-for light in lights:
-   light.on = True
-   light.brightness = 127
+light_names["Kitchen"].brightness = 254
 
 # Get lights by name
 for light in ['Kitchen', 'Bedroom', 'Garage']
-    b.lights[light].on = True
-    b.lights[light].hue = 15000
-    b.lights[light].saturation = 120
+    light_names[light].on = True
+    light_names[light].hue = 15000
+    light_names[light].saturation = 120
+
+# Get a flat list of the light objects
+lights_list = b.get_lights['list']
+
+for light in lights_list:
+   light.on = True
+   light.brightness = 127
 
 ```
