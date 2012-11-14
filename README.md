@@ -10,6 +10,8 @@ I decided to keep it as simple as possible and not rely on external libraries li
 
 It will automatically get the md5 username for you, if the button is not pressed it will prompt you to press it, use the connect() method to register.  Once pressed it will get the username and store in your home directory in a file called .python_hue
 
+##Example
+
 Using the set_state() method you can control pretty much all the parameters :
 
 ```python
