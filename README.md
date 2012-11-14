@@ -3,7 +3,6 @@
 ##Introduction
 
 This is a Python library to control the Philips Hue system.
-You can checkout the code here : [https://code.google.com/p/studioimaginaire/source/checkout?repo=python-hue]
 
 Huge thanks to [http://rsmck.co.uk/hue] for hacking the protocol !
 
