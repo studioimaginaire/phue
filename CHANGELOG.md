@@ -1,5 +1,12 @@
 #phue changelog
 
+##r6
+* Light objects are now obtained using the get_lights method
+* Added the alert method to the Light object
+* All requests now use httplib for consistency
+* Moved all source to github
+* Renamed the module to phue
+
 ##r5
  * Renamed the Bulb() object to Light() so it reflects the official API better
  * You can now pass the username as argument to the Bridge class if you don't want to read/store to file
