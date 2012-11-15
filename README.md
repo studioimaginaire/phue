@@ -75,7 +75,7 @@ for light in ['Kitchen', 'Bedroom', 'Garage']
     light_names[light].saturation = 120
 
 # Get a flat list of the light objects
-lights_list = b.get_lights['list']
+lights_list = b.get_lights('list')
 
 for light in lights_list:
    light.on = True
