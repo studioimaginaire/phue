@@ -1,5 +1,8 @@
 #phue changelog
 
+##r7
+* Fixed important bug when using set_state with a list of lights
+
 ##r6
 * Light objects are now obtained using the get_lights method
 * Added the alert method to the Light object
