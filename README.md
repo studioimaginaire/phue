@@ -1,4 +1,4 @@
-# phue: a Python library for the Philips Hue system.
+#phue: A Python library for the Philips Hue system.
 
 ##Introduction
 
@@ -10,7 +10,7 @@ I decided to keep it as simple as possible and not rely on external libraries li
 
 It will automatically get the md5 username for you, if the button is not pressed it will prompt you to press it, use the connect() method to register.  Once pressed it will get the username and store in your home directory in a file called .python_hue
 
-##Example
+##Examples
 
 Using the set_state() method you can control pretty much all the parameters :
 
@@ -51,7 +51,7 @@ command =  {'transitiontime' : 300, 'on' : True, 'bri' : 254}
 b.set_state(1, command)
 ```
 
-If you want to work in a more object-oriented way, you can get Light objects using the get_lights method. You can use 'id', 'name' or 'list' as argument.
+If you want to work in a more object-oriented way, you can get Light objects using the get_lights method. You can use 'id', 'name' or 'list' as argument:
 
 ```python
 
