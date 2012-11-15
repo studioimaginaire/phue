@@ -56,14 +56,14 @@ If you want to work in a more object-oriented way, you can get Light objects usi
 ```python
 
 # Get a dictionary with the light ids as the key
-lights = b.get_lights['id']
+lights = b.get_lights('id')
 
 # Get the name of bulb 1, set the brightness to 127
 lights[1].name
 lights[1].brightness = 127
 
 # Get a dictionary with the light name as the key
-light_names = b.get_lights['name']
+light_names = b.get_lights('name')
 
 # Set the birghtness of the bulb named "Kitchen"
 light_names["Kitchen"].brightness = 254
