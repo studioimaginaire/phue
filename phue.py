@@ -215,8 +215,8 @@ class Bridge(object):
             light_id_array = [light_id]
         for light in light_id_array:
             if parameter  == 'name':
-                return self.request('PUT', '/api/' + self.username + '/lights/'+ str(light_id), json.dumps(data))
+                print self.request('PUT', '/api/' + self.username + '/lights/'+ str(light_id), json.dumps(data))
             else:
-                return self.request('PUT', '/api/' + self.username + '/lights/'+ str(light) + '/state', json.dumps(data))
+                print self.request('PUT', '/api/' + self.username + '/lights/'+ str(light) + '/state', json.dumps(data))
 
 
