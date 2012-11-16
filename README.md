@@ -27,7 +27,7 @@ b = Bridge('ip_of_your_bridge')
 b.connect()
 
 # Get the bridge state (This returns the full dictionary that you can explore)
-b.get_info()
+b.get_api)
 
 # Prints if light 1 is on or not
 b.get_light(1, 'on')
