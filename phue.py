@@ -26,87 +26,87 @@ class Light(object):
        
     @property
     def name(self):
-        self._name = self.bridge.get_state(self.light_id, 'name')
+        self._name = self.bridge.get_light(self.light_id, 'name')
         return self._name
 
     @name.setter
     def name(self, value):
         old_name = self.name
         self._name = value
-        self.bridge.set_state(self.light_id, 'name', self._name)
+        self.bridge.set_light(self.light_id, 'name', self._name)
         
         self.bridge.lights_by_name[self.name] = self 
         del self.bridge.lights_by_name[old_name]
 
     @property
     def on(self):
-        self._on = self.bridge.get_state(self.light_id, 'on')
+        self._on = self.bridge.get_light(self.light_id, 'on')
         return self._on
 
     @on.setter
     def on(self, value):
         self._on = value
-        self.bridge.set_state(self.light_id, 'on', self._on)
+        self.bridge.set_light(self.light_id, 'on', self._on)
 
     @property
     def brightness(self):
-        self._brightness = self.bridge.get_state(self.light_id, 'bri')
+        self._brightness = self.bridge.get_light(self.light_id, 'bri')
         return self._brightness
 
     @brightness.setter
     def brightness(self, value):
         self._brightness = value
-        self.bridge.set_state(self.light_id, 'bri', self._brightness)
+        self.bridge.set_light(self.light_id, 'bri', self._brightness)
     
     @property
     def hue(self):
-        self._hue = self.bridge.get_state(self.light_id, 'hue')
+        self._hue = self.bridge.get_light(self.light_id, 'hue')
         return self._hue
 
     @hue.setter
     def hue(self, value):
         self._hue = value
-        self.bridge.set_state(self.light_id, 'hue', self._hue)
+        self.bridge.set_light(self.light_id, 'hue', self._hue)
 
     @property
     def saturation(self):
-        self._saturation = self.bridge.get_state(self.light_id, 'sat')
+        self._saturation = self.bridge.get_light(self.light_id, 'sat')
         return self._saturation
 
     @saturation.setter
     def saturation(self, value):
         self._saturation = value
-        self.bridge.set_state(self.light_id, 'sat', self._saturation)
+        self.bridge.set_light(self.light_id, 'sat', self._saturation)
 
     @property
     def xy(self):
-        self._xy = self.bridge.get_state(self.light_id, 'xy')
+        self._xy = self.bridge.get_light(self.light_id, 'xy')
         return self._xy
 
     @xy.setter
     def xy(self, value):
         self._xy = value
-        self.bridge.set_state(self.light_id, 'xy', self._xy)
+        self.bridge.set_light(self.light_id, 'xy', self._xy)
 
     @property
     def colortemp(self):
-        self._colortemp = self.bridge.get_state(self.light_id, 'ct')
+        self._colortemp = self.bridge.get_light(self.light_id, 'ct')
         return self._colortemp
 
     @colortemp.setter
     def colortemp(self, value):
         self._colortemp = value
-        self.bridge.set_state(self.light_id, 'ct', self._colortemp)
+        self.bridge.set_light(self.light_id, 'ct', self._colortemp)
 
     @property
     def alert(self):
-        self._alert = self.bridge.get_state(self.light_id, 'alert')
+        self._alert = self.bridge.get_light(self.light_id, 'alert')
         return self._alert
 
     @alert.setter
     def alert(self, value):
         self._alert = value
-        self.bridge.set_state(self.light_id, 'alert', self._alert)
+        self.bridge.set_light(self.light_id, 'alert', self._alert)
 
 class Bridge(object):
     def __init__(self, bridge_ip, username = None):
@@ -176,7 +176,7 @@ class Bridge(object):
             print 'Using username: ' + self.username
 
     #Returns a dictionary containing the lights, either by name or id (use 'id' or 'name' as the mode)
-    def get_lights(self, mode):
+    def get_light_objects(self, mode = 'list'):
         if self.lights_by_id == {}:
             lights = self.request('GET', '/api/' + self.username + '/lights/')
             for light in lights:
@@ -190,10 +190,14 @@ class Bridge(object):
             return [ self.lights_by_id[x] for x in range(1, len(self.lights_by_id) + 1) ]
   
 
+    # Returns the full api dictionary
+    def get_api(self):
+        return self.request('GET', '/api/' + self.username)
+
     # Gets state by light_id and parameter
-    def get_state(self, light_id = None, parameter = None):
+    def get_light(self, light_id = None, parameter = None):
         if light_id == None:
-            return self.request('GET', '/api/' + self.username)
+            return self.request('GET', '/api/' + self.username + '/lights/' )
         state = self.request('GET', '/api/' + self.username + '/lights/' + str(light_id))
         if parameter == None:
             return state
@@ -205,7 +209,7 @@ class Bridge(object):
 
     # light_id can be a single lamp or an array or lamps
     # parameters: 'on' : True|False , 'bri' : 0-254, 'sat' : 0-254, 'ct': 154-500
-    def set_state(self, light_id, parameter, value = None):
+    def set_light(self, light_id, parameter, value = None):
         if type(parameter) == dict:
             data = parameter
         else:
@@ -221,7 +225,7 @@ class Bridge(object):
                 result.append(self.request('PUT', '/api/' + self.username + '/lights/'+ str(light) + '/state', json.dumps(data)))
         return result
     
-    def get_group_state(self, group_id = None, parameter = None):
+    def get_group(self, group_id = None, parameter = None):
         if group_id == None:
             return self.request('GET', '/api/' + self.username + '/groups/')
         if parameter == None:
@@ -231,7 +235,7 @@ class Bridge(object):
         else:
             return self.request('GET', '/api/' + self.username + '/groups/'+  str(group_id))['action'][parameter]
 
-    def set_group_state(self, group_id, parameter, value = None):
+    def set_group(self, group_id, parameter, value = None):
         if type(parameter) == dict:
             data = parameter
         if parameter == 'lights' and type(value) == list:
