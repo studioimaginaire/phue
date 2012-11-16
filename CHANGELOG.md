@@ -1,6 +1,10 @@
 #phue changelog
 
 ##r7
+* Implemented groups
+* Renamed get_info to get_api
+* Renamed get_lights to get_light_objects
+* Renamed set_state and get_state to set_light and get_light
 * Fixed important bug when using set_state with a list of lights
 
 ##r6

@@ -14,7 +14,7 @@ It will automatically get the md5 username for you, if the button is not pressed
 
 ###Basic usage
 
-Using the set_light() method you can control pretty much all the parameters :
+Using the set_light and get_light methods you can control pretty much all the parameters :
 
 ```python
 #!/usr/bin/python
