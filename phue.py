@@ -100,7 +100,7 @@ class Light(object):
 
     @property
     def alert(self):
-        self._colortemp = self.bridge.get_state(self.light_id, 'alert')
+        self._alert = self.bridge.get_state(self.light_id, 'alert')
         return self._alert
 
     @alert.setter
@@ -135,7 +135,7 @@ class Bridge(object):
 
     def request(self,  mode = 'GET', address = None, data = None):
         connection = httplib.HTTPConnection(self.bridge_ip)
-        if mode == 'GET':
+        if mode == 'GET' or mode == 'DELETE':
             connection.request(mode, address)
         if mode == 'PUT' or mode == 'POST':
             connection.request(mode, address, data)
@@ -188,15 +188,15 @@ class Bridge(object):
             return self.lights_by_name
         if mode == 'list':
             return [ self.lights_by_id[x] for x in range(1, len(self.lights_by_id) + 1) ]
-
-    
-    # Return the dictionary of the whole bridge
-    def get_info(self):
-        return self.request('GET', '/api/' + self.username)
+  
 
     # Gets state by light_id and parameter
-    def get_state(self, light_id, parameter):
+    def get_state(self, light_id = None, parameter = None):
+        if light_id == None:
+            return self.request('GET', '/api/' + self.username)
         state = self.request('GET', '/api/' + self.username + '/lights/' + str(light_id))
+        if parameter == None:
+            return state
         if parameter == 'name':
             return state[parameter]
         else:
@@ -213,10 +213,43 @@ class Bridge(object):
         light_id_array = light_id
         if type(light_id) == int:
             light_id_array = [light_id]
+        result = []
         for light in light_id_array:
             if parameter  == 'name':
-                print self.request('PUT', '/api/' + self.username + '/lights/'+ str(light_id), json.dumps(data))
+                result.append(self.request('PUT', '/api/' + self.username + '/lights/'+ str(light_id), json.dumps(data)))
             else:
-                print self.request('PUT', '/api/' + self.username + '/lights/'+ str(light) + '/state', json.dumps(data))
+                result.append(self.request('PUT', '/api/' + self.username + '/lights/'+ str(light) + '/state', json.dumps(data)))
+        return result
+    
+    def get_group_state(self, group_id = None, parameter = None):
+        if group_id == None:
+            return self.request('GET', '/api/' + self.username + '/groups/')
+        if parameter == None:
+            return self.request('GET', '/api/' + self.username + '/groups/'+ str(group_id))
+        elif parameter == 'name' or parameter == 'lights':
+            return self.request('GET', '/api/' + self.username + '/groups/'+ str(group_id))[parameter]
+        else:
+            return self.request('GET', '/api/' + self.username + '/groups/'+  str(group_id))['action'][parameter]
+
+    def set_group_state(self, group_id, parameter, value = None):
+        if type(parameter) == dict:
+            data = parameter
+        if parameter == 'lights' and type(value) == list:
+            data = {parameter : [str(x) for x in value] }
+        else:
+            data = {parameter : value}
+
+        if parameter == 'name' or parameter == 'lights':
+            return self.request('PUT', '/api/' + self.username + '/groups/'+ str(group_id), json.dumps(data))
+        else:
+            return self.request('PUT', '/api/' + self.username + '/groups/'+ str(group_id) + '/action', json.dumps(data))
+
+    def create_group(self, name, lights = None):
+        data = {'lights' : [str(x) for x in lights], 'name': name}
+        return self.request('POST', '/api/' + self.username + '/groups/', json.dumps(data))
+
+    def delete_group(self, group_id):
+        return self.request('DELETE', '/api/' + self.username + '/groups/' + str(group_id))
+
 
 
