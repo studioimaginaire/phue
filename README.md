@@ -89,7 +89,7 @@ for light in lights_list:
 
 ###Groups
 
-You can also work with the groups functionality of the Bridge.
+You can also work with the groups functionality of the Bridge. Please note that only group 0 seems to be working properly right now.
 
 ```python
 
