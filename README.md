@@ -89,7 +89,7 @@ for light in lights_list:
 
 ###Groups
 
-You can also work with the groups functionality of the Bridge. Please note that only group 0 seems to be working properly right now.
+You can also work with the groups functionality of the Bridge. If groups aren't working, try re-setting the bridge by unpluging it and plugging it back again.
 
 ```python
 
