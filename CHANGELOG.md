@@ -1,6 +1,7 @@
 #phue changelog
 
 ##r7
+* IP is now optional if present in config file
 * Implemented groups
 * Renamed get_info to get_api
 * Renamed get_lights to get_light_objects

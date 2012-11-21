@@ -1,7 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-
 import httplib
 import json
 import os
@@ -109,9 +108,9 @@ class Light(object):
         self.bridge.set_light(self.light_id, 'alert', self._alert)
 
 class Bridge(object):
-    def __init__(self, bridge_ip, username = None):
+    def __init__(self, ip = None, username = None):
         self.config_file = os.path.join(os.getenv("HOME"),'.python_hue')
-        self.bridge_ip = bridge_ip
+        self.ip = ip
         self.username = username
         self.lights_by_id = {}
         self.lights_by_name = {}
@@ -134,7 +133,7 @@ class Bridge(object):
         self.request('PUT', '/api/' + self.username + '/config', json.dumps(data))
 
     def request(self,  mode = 'GET', address = None, data = None):
-        connection = httplib.HTTPConnection(self.bridge_ip)
+        connection = httplib.HTTPConnection(self.ip)
         if mode == 'GET' or mode == 'DELETE':
             connection.request(mode, address)
         if mode == 'PUT' or mode == 'POST':
@@ -153,7 +152,7 @@ class Bridge(object):
                 if 'success' in key:
                     with open(self.config_file, 'w') as f:
                         print 'Writing configuration file to ' + self.config_file
-                        f.write(json.dumps({self.bridge_ip : line['success']}))
+                        f.write(json.dumps({self.ip : line['success']}))
                         print 'Reconnecting to the bridge'
                     self.connect()
                 if 'error' in key:
@@ -161,19 +160,32 @@ class Bridge(object):
                         print 'Please press button on bridge to register application and call connect() method'
                     if line['error']['type'] == 7:
                         print 'Unknown username'
+    
     def connect(self):
-        print 'Attempting to connect to the bridge'
-        if self.username == None:
+        print 'Attempting to connect to the bridge...'
+        # If the ip and username were provided at class init
+        if self.ip is not None and self.username is not None:
+            print 'Uding ip: ' + self.ip
+            print 'Using username: ' + self.username
+            return
+        
+        if self.ip == None or self.username == None:
             try:
                 with open(self.config_file) as f:
-                    self.username =  json.loads(f.read())[self.bridge_ip]['username']
-                    print 'Using username: ' + self.username
-        
+                    config = json.loads(f.read())
+                    if self.ip is None:
+                        self.ip = config.keys()[0]
+                        print 'Uding ip from config: ' + self.ip
+                    else:
+                        print 'Uding ip: ' + self.ip
+                    if self.username is None:
+                        self.username =  config[self.ip]['username']
+                        print 'Using username from config: ' + self.username
+                    else:
+                        print 'Using username: ' + self.username
             except Exception as e:
                 print 'Error opening config file, will attempt bridge registration'
                 self.register_app()
-        else:
-            print 'Using username: ' + self.username
 
     #Returns a dictionary containing the lights, either by name or id (use 'id' or 'name' as the mode)
     def get_light_objects(self, mode = 'list'):
