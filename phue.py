@@ -109,7 +109,10 @@ class Light(object):
 
 class Bridge(object):
     def __init__(self, ip = None, username = None):
-        self.config_file = os.path.join(os.getenv("HOME"),'.python_hue')
+        if os.access(os.getenv("HOME"),os.W_OK):
+            self.config_file_path = os.path.join(os.getenv("HOME"),'.python_hue')
+        else:
+            self.config_file_path = os.path.join(os.getcwd(),'.python_hue')
         self.ip = ip
         self.username = username
         self.lights_by_id = {}
@@ -150,8 +153,8 @@ class Bridge(object):
         for line in response:
             for key in line:
                 if 'success' in key:
-                    with open(self.config_file, 'w') as f:
-                        print 'Writing configuration file to ' + self.config_file
+                    with open(self.config_file_path, 'w') as f:
+                        print 'Writing configuration file to ' + self.config_file_path
                         f.write(json.dumps({self.ip : line['success']}))
                         print 'Reconnecting to the bridge'
                     self.connect()
@@ -171,7 +174,7 @@ class Bridge(object):
         
         if self.ip == None or self.username == None:
             try:
-                with open(self.config_file) as f:
+                with open(self.config_file_path) as f:
                     config = json.loads(f.read())
                     if self.ip is None:
                         self.ip = config.keys()[0]
