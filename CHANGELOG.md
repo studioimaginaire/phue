@@ -1,6 +1,8 @@
 #phue changelog
 
 ##r7
+* Added docstrings to Light properties
+* Added colormode property to Light class
 * IP is now optional if present in config file
 * Implemented groups
 * Renamed get_info to get_api

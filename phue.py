@@ -17,6 +17,7 @@ class Light(object):
         self._name = None
         self._on = None
         self._brightness = None
+        self._colormode = None
         self._hue = None
         self._saturation = None
         self._xy = None
@@ -25,6 +26,7 @@ class Light(object):
        
     @property
     def name(self):
+        '''Get or set the name of the light [string]'''
         self._name = self.bridge.get_light(self.light_id, 'name')
         return self._name
 
@@ -39,6 +41,7 @@ class Light(object):
 
     @property
     def on(self):
+        '''Get or set the state of the light [True|False]'''
         self._on = self.bridge.get_light(self.light_id, 'on')
         return self._on
 
@@ -48,7 +51,14 @@ class Light(object):
         self.bridge.set_light(self.light_id, 'on', self._on)
 
     @property
+    def colormode(self):
+        '''Get the color mode of the light [hue|xy|ct]'''
+        self._colormode = self.bridge.get_light(self.light_id, 'colormode')
+        return self._colormode
+    
+    @property
     def brightness(self):
+        '''Get or set the brightness of the light [0-254]'''
         self._brightness = self.bridge.get_light(self.light_id, 'bri')
         return self._brightness
 
@@ -59,6 +69,7 @@ class Light(object):
     
     @property
     def hue(self):
+        '''Get or set the hue of the light [0-65535]'''
         self._hue = self.bridge.get_light(self.light_id, 'hue')
         return self._hue
 
@@ -69,6 +80,7 @@ class Light(object):
 
     @property
     def saturation(self):
+        '''Get or set the saturation of the light [0-254]'''
         self._saturation = self.bridge.get_light(self.light_id, 'sat')
         return self._saturation
 
@@ -79,6 +91,7 @@ class Light(object):
 
     @property
     def xy(self):
+        '''Get or set the color coordinates of the light [ [0.0-1.0, 0.0-1.0] ]'''
         self._xy = self.bridge.get_light(self.light_id, 'xy')
         return self._xy
 
@@ -89,6 +102,7 @@ class Light(object):
 
     @property
     def colortemp(self):
+        '''Get or set the color temperature of the light [154-500]'''
         self._colortemp = self.bridge.get_light(self.light_id, 'ct')
         return self._colortemp
 
@@ -99,6 +113,7 @@ class Light(object):
 
     @property
     def alert(self):
+        '''Get or set the alert state of the light [select|lselect|none]'''
         self._alert = self.bridge.get_light(self.light_id, 'alert')
         return self._alert
 
