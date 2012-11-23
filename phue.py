@@ -141,6 +141,7 @@ class Bridge(object):
     
     @property
     def name(self):
+        '''Get or set the name of the bridge [string]'''
         self._name = self.request('GET', '/api/' + self.username + '/config')['name']
         return self._name
     
