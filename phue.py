@@ -206,6 +206,13 @@ class Bridge(object):
                 print 'Error opening config file, will attempt bridge registration'
                 self.register_app()
 
+    def get_light_id_by_name(self,name):
+        lights = self.get_light()
+        for light_id in lights:
+            if name == lights[light_id]['name']:
+                return light_id
+        return False
+
     #Returns a dictionary containing the lights, either by name or id (use 'id' or 'name' as the mode)
     def get_light_objects(self, mode = 'list'):
         if self.lights_by_id == {}:
@@ -227,6 +234,8 @@ class Bridge(object):
 
     # Gets state by light_id and parameter
     def get_light(self, light_id = None, parameter = None):
+        if type(light_id) == str or type(light_id) == unicode:
+            light_id = self.get_light_id_by_name(light_id)
         if light_id == None:
             return self.request('GET', '/api/' + self.username + '/lights/' )
         state = self.request('GET', '/api/' + self.username + '/lights/' + str(light_id))
@@ -246,14 +255,18 @@ class Bridge(object):
         else:
             data = {parameter : value}
         light_id_array = light_id
-        if type(light_id) == int:
+        if type(light_id) == int or type(light_id) == str or type(light_id) == unicode:
             light_id_array = [light_id]
         result = []
         for light in light_id_array:
             if parameter  == 'name':
                 result.append(self.request('PUT', '/api/' + self.username + '/lights/'+ str(light_id), json.dumps(data)))
             else:
-                result.append(self.request('PUT', '/api/' + self.username + '/lights/'+ str(light) + '/state', json.dumps(data)))
+                if type(light) == str or type(light) == unicode:
+                    converted_light = self.get_light_id_by_name(light)
+                else:
+                    converted_light = light
+                result.append(self.request('PUT', '/api/' + self.username + '/lights/'+ str(converted_light) + '/state', json.dumps(data)))
         return result
     
     def get_group(self, group_id = None, parameter = None):
