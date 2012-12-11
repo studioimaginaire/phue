@@ -194,9 +194,9 @@ class Bridge(object):
                     config = json.loads(f.read())
                     if self.ip is None:
                         self.ip = config.keys()[0]
-                        print 'Uding ip from config: ' + self.ip
+                        print 'Using ip from config: ' + self.ip
                     else:
-                        print 'Uding ip: ' + self.ip
+                        print 'Using ip: ' + self.ip
                     if self.username is None:
                         self.username =  config[self.ip]['username']
                         print 'Using username from config: ' + self.username
@@ -285,6 +285,44 @@ class Bridge(object):
 
     def delete_group(self, group_id):
         return self.request('DELETE', '/api/' + self.username + '/groups/' + str(group_id))
+
+    def get_schedule(self, schedule_id = None, parameter = None):
+        if schedule_id == None:
+            return self.request('GET', '/api/' + self.username + '/schedules')
+        if parameter == None:
+            return self.request('GET', '/api/' + self.username + '/schedules/'+ str(schedule_id))
+
+    def create_schedule(self, name, time, light_id, data, description = ' '):
+        schedule = {
+                    'name': name, 
+                    'time': time, 
+                    'description': description, 
+                    'command':
+                        {
+                        'method': 'PUT', 
+                        'address': '/api/' + self.username + '/lights/' + str(light_id) + '/state',
+                        'body': data
+                        }
+                    }
+        return self.request('POST', '/api/' + self.username + '/schedules', json.dumps(schedule))
+
+    def create_group_schedule(self, name, time, light_id, data, description = ' '):
+        schedule = {
+                    'name': name, 
+                    'time': time, 
+                    'description': description, 
+                    'command':
+                        {
+                        'method': 'PUT', 
+                        'address': '/api/' + self.username + '/groups/' + str(light_id) + '/action',
+                        'body': data
+                        }
+                    }
+        return self.request('POST', '/api/' + self.username + '/schedules', json.dumps(schedule))
+
+    def delete_schedule(self, schedule_id):
+        return self.request('DELETE', '/api/' + self.username + '/schedules/' + str(schedule_id))
+
 
 
 

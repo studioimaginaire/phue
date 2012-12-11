@@ -121,3 +121,28 @@ b.set_group(1, 'on', False)
 b.delete_group(1)
 
 ```
+
+###Schedules
+
+You can view, create and delete schedules using the following methods.  Note that the time of the bridge is in UTC so you will need to offset with your timezone.
+
+```python
+
+# Get the list of different schedules
+b.get_schedule()
+
+# Get the data of a particular schedules
+b.get_schedule(1)
+
+# Create a schedule for a light, arguments are name, time, light_id, data (as a dictionary) and optional description
+data = {'on': False, 'transitiontime': 600}
+b.create_schedule('My schedule', '2012-11-12T22:34:00', 1, data, 'Bedtime' )
+
+# Create a schedule for a group, same as above but with a group_id instead of light_id
+data = {'on': False, 'transitiontime': 600}
+b.create_group_schedule('My schedule', '2012-11-12T22:34:00', 0, data, 'Bedtime' )
+
+# Delete a schedule
+b.delete_schedule(1)
+
+```

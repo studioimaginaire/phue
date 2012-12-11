@@ -5,6 +5,7 @@
 * Added colormode property to Light class
 * IP is now optional if present in config file
 * Implemented groups
+* Implemented schedules
 * Renamed get_info to get_api
 * Renamed get_lights to get_light_objects
 * Renamed set_state and get_state to set_light and get_light
