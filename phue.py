@@ -319,7 +319,7 @@ class Bridge(object):
                     }
         return self.request('POST', '/api/' + self.username + '/schedules', json.dumps(schedule))
 
-    def create_group_schedule(self, name, time, light_id, data, description = ' '):
+    def create_group_schedule(self, name, time, group_id, data, description = ' '):
         schedule = {
                     'name': name, 
                     'time': time, 
@@ -327,7 +327,7 @@ class Bridge(object):
                     'command':
                         {
                         'method': 'PUT', 
-                        'address': '/api/' + self.username + '/groups/' + str(light_id) + '/action',
+                        'address': '/api/' + self.username + '/groups/' + str(group_id) + '/action',
                         'body': data
                         }
                     }
