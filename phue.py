@@ -4,10 +4,17 @@
 import httplib
 import json
 import os
+import argparse
+import platform
 
 # phue by Nathanaël Lécaudé - A Philips Hue Python library
 # https://github.com/studioimaginaire/phue
 # Original protocol hacking by rsmck : http://rsmck.co.uk/hue
+
+if platform.system() == 'Windows':
+    USER_HOME = 'USERPROFILE'
+else:
+    USER_HOME = 'HOME'
 
 class Light(object):
     def __init__(self, bridge, light_id):
@@ -124,8 +131,8 @@ class Light(object):
 
 class Bridge(object):
     def __init__(self, ip = None, username = None):
-        if os.access(os.getenv("HOME"),os.W_OK):
-            self.config_file_path = os.path.join(os.getenv("HOME"),'.python_hue')
+        if os.access(os.getenv(USER_HOME),os.W_OK):
+            self.config_file_path = os.path.join(os.getenv(USER_HOME),'.python_hue')
         else:
             self.config_file_path = os.path.join(os.getcwd(),'.python_hue')
         self.ip = ip
@@ -247,7 +254,7 @@ class Bridge(object):
             return state['state'][parameter]
 
 
-    # light_id can be a single lamp or an array or lamps
+    # light_id can be a single lamp or an array of lamps
     # parameters: 'on' : True|False , 'bri' : 0-254, 'sat' : 0-254, 'ct': 154-500
     def set_light(self, light_id, parameter, value = None):
         if type(parameter) == dict:
@@ -336,6 +343,27 @@ class Bridge(object):
     def delete_schedule(self, schedule_id):
         return self.request('DELETE', '/api/' + self.username + '/schedules/' + str(schedule_id))
 
+if __name__ == '__main__':
+    b = Bridge()
 
+    parser = argparse.ArgumentParser()
+    parser.add_argument('pos1', type=list)
+    parser.add_argument('pos2')
+    parser.add_argument('pos3')
+    args = parser.parse_args()
+    print args.pos1
+
+'''
+light 1 on
+light 2 off
+
+
+group 1 on
+group 2 off
+
+light Cuisine on
+light Cuisine off
+
+'''
 
 
