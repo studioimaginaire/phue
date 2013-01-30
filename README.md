@@ -4,7 +4,7 @@
 
 This is a Python library to control the Philips Hue system.
 
-Huge thanks to [http://rsmck.co.uk/hue] for hacking the protocol !
+Huge thanks to http://rsmck.co.uk/hue for hacking the protocol !
 
 I decided to keep it as simple as possible and not rely on external libraries like requests so it's easily portable to any system.
 
@@ -151,7 +151,7 @@ b.delete_schedule(1)
 
 You can use the phue library within Max/MSP by using Nick Rothwell's Jython objects.  He recently updated the version to support Jython 2.7 which is required for phue to work.
 
-Download it here here : [https://github.com/cassiel/net.loadbang.jython]
+Download it here here : https://github.com/cassiel/net.loadbang.jython
 
 ##Using phue on iOS via Pythonista
 
@@ -160,4 +160,4 @@ This is a great way to build quick prototypes on iOS as you don't need to compil
 
 See this little example:
 
-<iframe width="560" height="315" src="http://www.youtube.com/embed/6K-fxWG6JSs" frameborder="0" allowfullscreen></iframe>
+http://www.youtube.com/embed/6K-fxWG6JSs
