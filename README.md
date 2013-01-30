@@ -146,3 +146,18 @@ b.create_group_schedule('My schedule', '2012-11-12T22:34:00', 0, data, 'Bedtime'
 b.delete_schedule(1)
 
 ```
+
+##Using phue with Max/MSP via Jython
+
+You can use the phue library within Max/MSP by using Nick Rothwell's Jython objects.  He recently updated the version to support Jython 2.7 which is required for phue to work.
+
+Download it here here : [https://github.com/cassiel/net.loadbang.jython]
+
+##Using phue on iOS via Pythonista
+
+You can use phue on your iOS device via the [Pythonista](http://omz-software.com/pythonista) app.
+This is a great way to build quick prototypes on iOS as you don't need to compile anything, you can code directly from the device itself.
+
+See this little example:
+
+<iframe width="560" height="315" src="http://www.youtube.com/embed/6K-fxWG6JSs" frameborder="0" allowfullscreen></iframe>
