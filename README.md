@@ -149,9 +149,9 @@ b.delete_schedule(1)
 
 ##Using phue with Max/MSP via Jython
 
-You can use the phue library within Max/MSP by using [Nick Rothwell's](http://www.cassiel.com) Jython objects.  He recently updated the version to support Jython 2.7 which is required for phue to work.
+You can use the phue library within [Max/MSP](http://www.cycling74.com) by using [Nick Rothwell's](http://www.cassiel.com) Jython objects.  He recently updated the version to support Jython 2.7 which is required for phue to work.
 
-Download it here here : https://github.com/cassiel/net.loadbang.jython
+Download it here: https://github.com/cassiel/net.loadbang.jython
 
 ##Using phue on iOS via Pythonista
 
