@@ -1,11 +1,16 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-import httplib
 import json
 import os
 import argparse
 import platform
+import sys
+if sys.version_info.major > 2:
+    import http.client as httplib
+else:
+    import httplib
+
 
 # phue by Nathanaël Lécaudé - A Philips Hue Python library
 # https://github.com/studioimaginaire/phue
