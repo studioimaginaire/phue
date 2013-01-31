@@ -10,6 +10,12 @@ I decided to keep it as simple as possible and not rely on external libraries li
 
 It will automatically get the md5 username for you, if the button is not pressed it will prompt you to press it, use the connect() method to register.  Once pressed it will get the username and store in your home directory in a file called .python_hue
 
+#Installation
+
+phue consists of a single file (phue.py) that you can put in your python search path or in site-packages (or dist-packages depending on the platform)
+You can also simply run it by putting it in the same directory as you main script file or start a python interpreter in the same directory.
+phue works with Python 2.6.x and 2.7.x  
+
 ##Examples
 
 ###Basic usage
