@@ -3,7 +3,6 @@
 
 import json
 import os
-import argparse
 import platform
 import sys
 if sys.version_info.major > 2:
@@ -349,6 +348,7 @@ class Bridge(object):
         return self.request('DELETE', '/api/' + self.username + '/schedules/' + str(schedule_id))
 
 if __name__ == '__main__':
+    import argparse
     b = Bridge()
 
     parser = argparse.ArgumentParser()
