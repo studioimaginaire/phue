@@ -5,7 +5,7 @@ import json
 import os
 import platform
 import sys
-if sys.version_info.major > 2:
+if sys.version_info[0] > 2:
     import http.client as httplib
 else:
     import httplib
