@@ -1,27 +1,22 @@
 #phue changelog
 
-Additions by Marshall Perrin: 
-
-* Add access to Light objects via direct indexing of the Bridge object via __getitem__
-* Implement real logging using Python's logging module, including error checking
-  and display of responses from the server.
-* Add function colortemp_k for color temperatures in Kelvin.
-* Some additional error checking for invalid or missing parameters
-* More details in docstrings.
-
-
-
-
 ##r7
-* Added docstrings to Light properties
-* Added colormode property to Light class
-* IP is now optional if present in config file
-* Implemented groups
-* Implemented schedules
-* Renamed get_info to get_api
-* Renamed get_lights to get_light_objects
-* Renamed set_state and get_state to set_light and get_light
-* Fixed important bug when using set_state with a list of lights
+* Added docstrings to Light properties (Nathanaël Lécaudé)
+* Added colormode property to Light class (Nathanaël Lécaudé)
+* IP is now optional if present in config file (Nathanaël Lécaudé)
+* Implemented groups (Nathanaël Lécaudé)
+* Implemented schedules (Nathanaël Lécaudé)
+* Renamed get_info to get_api (Nathanaël Lécaudé)
+* Renamed get_lights to get_light_objects (Nathanaël Lécaudé)
+* Renamed set_state and get_state to set_light and get_light (Nathanaël Lécaudé)
+* Fixed important bug when using set_state with a list of lights (Nathanaël Lécaudé)
+* Add access to Light objects via direct indexing of the Bridge object via __getitem__ (Marshall Perrin)
+* Implement real logging using Python's logging module, including error checking
+  and display of responses from the server. (Marshall Perrin)
+* Add function colortemp_k for color temperatures in Kelvin. (Marshall Perrin)
+* Some additional error checking for invalid or missing parameters (Marshall Perrin)
+* More details in docstrings. (Marshall Perrin)
+
 
 ##r6
 * Light objects are now obtained using the get_lights method

@@ -1,9 +1,9 @@
 #phue TODO
 
- * Replace prints with proper logging mechanism (done)
  * Find a more elegant way to deal with transitiontime
  * Add a Group class
  * Cleanup the connect and register_app methods
+ * ~~Replace prints with proper logging mechanism~~
  * ~~Read/Write config file from cwd if home is not writable~~
  * ~~Store IP in config file~~
  * ~~Add support for groups~~
