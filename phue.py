@@ -10,6 +10,11 @@ if sys.version_info.major > 2:
 else:
     import httplib
 
+import logging
+logger = logging.getLogger('phue')
+logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
+
 
 # phue by Nathanaël Lécaudé - A Philips Hue Python library
 # https://github.com/studioimaginaire/phue
@@ -21,6 +26,11 @@ else:
     USER_HOME = 'HOME'
 
 class Light(object):
+    """ Hue Light object 
+    
+    Light settings can be accessed or set via the properties of this object.
+    
+    """
     def __init__(self, bridge, light_id):
         self.bridge = bridge
         self.light_id = light_id
@@ -46,6 +56,8 @@ class Light(object):
         old_name = self.name
         self._name = value
         self.bridge.set_light(self.light_id, 'name', self._name)
+
+        logger.debug("Renaming light from '{0}' to '{1}'".format(old_name, value))
         
         self.bridge.lights_by_name[self.name] = self 
         del self.bridge.lights_by_name[old_name]
@@ -70,13 +82,18 @@ class Light(object):
     @property
     def brightness(self):
         '''Get or set the brightness of the light [0-254]'''
+        
         self._brightness = self.bridge.get_light(self.light_id, 'bri')
         return self._brightness
 
     @brightness.setter
     def brightness(self, value):
         self._brightness = value
-        self.bridge.set_light(self.light_id, 'bri', self._brightness)
+        result = self.bridge.set_light(self.light_id, 'bri', self._brightness)
+        #try:
+        #except:
+            #pass
+
     
     @property
     def hue(self):
@@ -91,7 +108,11 @@ class Light(object):
 
     @property
     def saturation(self):
-        '''Get or set the saturation of the light [0-254]'''
+        '''Get or set the saturation of the light [0-255]
+        
+        0 = white
+        255 = most saturated
+        '''
         self._saturation = self.bridge.get_light(self.light_id, 'sat')
         return self._saturation
 
@@ -102,7 +123,10 @@ class Light(object):
 
     @property
     def xy(self):
-        '''Get or set the color coordinates of the light [ [0.0-1.0, 0.0-1.0] ]'''
+        '''Get or set the color coordinates of the light [ [0.0-1.0, 0.0-1.0] ]
+        
+        This is in a color space similar to CIE 1931 (but not quite identical)
+        '''
         self._xy = self.bridge.get_light(self.light_id, 'xy')
         return self._xy
 
@@ -111,14 +135,41 @@ class Light(object):
         self._xy = value
         self.bridge.set_light(self.light_id, 'xy', self._xy)
 
+
+    @property
+    def colortemp_k(self):
+        '''Get or set the color temperature of the light, in units of Kelvin [2000-6500]'''
+        self._colortemp = self.bridge.get_light(self.light_id, 'ct')
+        return 1e6/self._colortemp
+
+    @colortemp_k.setter
+    def colortemp_k(self, value):
+        if value > 6500:
+            logger.warn('6500 K is max allowed color temp')
+            value = 6500
+        elif value < 2000:
+            logger.warn('2000 K is min allowed color temp')
+            value = 2000
+ 
+    
+        colortemp_mireds = int(round(1e6/value))
+        logger.debug("{0:d} K is {1} mireds".format(value, colortemp_mireds))
+        self.colortemp = colortemp_mireds
+        #self.bridge.set_light(self.light_id, 'ct', self._colortemp)
+
+ 
     @property
     def colortemp(self):
-        '''Get or set the color temperature of the light [154-500]'''
+        '''Get or set the color temperature of the light, in units of mireds [154-500]'''
         self._colortemp = self.bridge.get_light(self.light_id, 'ct')
         return self._colortemp
 
     @colortemp.setter
     def colortemp(self, value):
+        if value < 154:
+            logger.warn('154 mireds is coolest allowed color temp')
+        elif value > 500:
+            logger.warn('500 mireds is warmest allowed color temp')
         self._colortemp = value
         self.bridge.set_light(self.light_id, 'ct', self._colortemp)
 
@@ -130,15 +181,48 @@ class Light(object):
 
     @alert.setter
     def alert(self, value):
+        if value is None: value = 'none'
         self._alert = value
         self.bridge.set_light(self.light_id, 'alert', self._alert)
 
 class Bridge(object):
+    """ Interface to the Hue ZigBee bridge 
+    
+    You can obtain Light objects by calling the get_light_objects method:
+
+        >>> b = Bridge(ip='192.168.1.100')
+        >>> b.get_light_objects()
+        [<phue.Light at 0x10473d750>,
+         <phue.Light at 0x1046ce110>]
+
+    Or more succinctly just by accessing this Bridge object as a list or dict:
+
+        >>> b[0]
+        <phue.Light at 0x10473d750>
+        >>> b['Kitchen']
+        <phue.Light at 0x1046ce110>
+
+
+    
+    """
     def __init__(self, ip = None, username = None):
+        """ Initialization function. 
+
+        Parameters:
+        ------------
+        ip : string
+            IP address as dotted quad
+        username : string, optional
+
+        """
         if os.access(os.getenv(USER_HOME),os.W_OK):
             self.config_file_path = os.path.join(os.getenv(USER_HOME),'.python_hue')
         else:
             self.config_file_path = os.path.join(os.getcwd(),'.python_hue')
+
+        if ip is None:
+            raise ValueError("You must specify an IP address when creating a Bridge!")
+
         self.ip = ip
         self.username = username
         self.lights_by_id = {}
@@ -181,22 +265,22 @@ class Bridge(object):
             for key in line:
                 if 'success' in key:
                     with open(self.config_file_path, 'w') as f:
-                        print('Writing configuration file to ' + self.config_file_path)
+                        logger.info('Writing configuration file to ' + self.config_file_path)
                         f.write(json.dumps({self.ip : line['success']}))
-                        print('Reconnecting to the bridge')
+                        logger.info('Reconnecting to the bridge')
                     self.connect()
                 if 'error' in key:
                     if line['error']['type'] == 101:
-                        print('Please press button on bridge to register application and call connect() method')
+                        logger.info('Please press button on bridge to register application and call connect() method')
                     if line['error']['type'] == 7:
-                        print('Unknown username')
+                        logger.info('Unknown username')
     
     def connect(self):
-        print('Attempting to connect to the bridge...')
+        logger.info('Attempting to connect to the bridge...')
         # If the ip and username were provided at class init
         if self.ip is not None and self.username is not None:
-            print('Uding ip: ' + self.ip)
-            print('Using username: ' + self.username)
+            logger.info('Uding ip: ' + self.ip)
+            logger.info('Using username: ' + self.username)
             return
         
         if self.ip == None or self.username == None:
@@ -205,16 +289,16 @@ class Bridge(object):
                     config = json.loads(f.read())
                     if self.ip is None:
                         self.ip = config.keys()[0]
-                        print('Using ip from config: ' + self.ip)
+                        logger.info('Using ip from config: ' + self.ip)
                     else:
-                        print('Using ip: ' + self.ip)
+                        logger.info('Using ip: ' + self.ip)
                     if self.username is None:
                         self.username =  config[self.ip]['username']
-                        print('Using username from config: ' + self.username)
+                        logger.info('Using username from config: ' + self.username)
                     else:
-                        print('Using username: ' + self.username)
+                        logger.info('Using username: ' + self.username)
             except Exception as e:
-                print('Error opening config file, will attempt bridge registration')
+                logger.info('Error opening config file, will attempt bridge registration')
                 self.register_app()
 
     def get_light_id_by_name(self,name):
@@ -238,13 +322,29 @@ class Bridge(object):
         if mode == 'list':
             return [ self.lights_by_id[x] for x in range(1, len(self.lights_by_id) + 1) ]
   
+    def __getitem__(self, key):
+        if self.lights_by_id == {}:
+            self.get_light_objects()
 
-    # Returns the full api dictionary
+        try:
+            return self.lights_by_id[key]
+        except:
+            try:
+                return self.lights_by_name[key]
+            except:
+                raise KeyError('Not a valid key (integer index starting with 1, or light name): '+str(key))
+
+    @property
+    def lights(self):
+        """ Access lights as a list """
+        return self.get_light_objects(mode='list')
+
     def get_api(self):
+        """ Returns the full api dictionary """
         return self.request('GET', '/api/' + self.username)
 
-    # Gets state by light_id and parameter
     def get_light(self, light_id = None, parameter = None):
+        """ Gets state by light_id and parameter"""
         if type(light_id) == str or type(light_id) == unicode:
             light_id = self.get_light_id_by_name(light_id)
         if light_id == None:
@@ -278,6 +378,11 @@ class Bridge(object):
                 else:
                     converted_light = light
                 result.append(self.request('PUT', '/api/' + self.username + '/lights/'+ str(converted_light) + '/state', json.dumps(data)))
+            if 'error' in result[-1][0].keys():
+                logger.warn("ERROR: {0} for light {1}".format(result[-1][0]['error']['description'], light) )
+
+        
+
         return result
     
     def get_group(self, group_id = None, parameter = None):
