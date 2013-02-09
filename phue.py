@@ -140,7 +140,7 @@ class Light(object):
     def colortemp_k(self):
         '''Get or set the color temperature of the light, in units of Kelvin [2000-6500]'''
         self._colortemp = self.bridge.get_light(self.light_id, 'ct')
-        return 1e6/self._colortemp
+        return int(round(1e6/self._colortemp))
 
     @colortemp_k.setter
     def colortemp_k(self, value):
