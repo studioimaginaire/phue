@@ -93,6 +93,44 @@ for light in lights_list:
 
 ```
 
+###Setting Transition Times
+
+In the Hue API, transition times are specified in deciseconds (tenths
+of a second). This
+is not tracked as a device setting, but rather needs to be applied on
+each individual transition command you want to control the time of.
+
+This can be done by specifying a transitiontime keyword when calling
+set_light on the bridge:
+
+
+```python
+# Set brightness of lamp 1 to max, rapidly
+b.set_light(1, 'bri', 254, transitiontime=1)
+```
+
+As a convenience, the Light class implements a wrapper that remembers
+a specified transition time for that light, and applies it
+automatically to every transition:
+
+```python
+light = light_names['Kitchen']
+light.transitiontime = 2
+# this next transition will happen rapidly
+light.brightness = 20    
+```
+
+Note that there is a known bug where turning a light off with the
+transitiontime specified can cause the brightness level to behave
+erratically when the light is turned back on. See [this
+discussion](http://www.everyhue.com/vanilla/discussion/204/bug-with-brightness-when-requesting-ontrue-transitiontime5)
+This package attempts to work around this issue by automatically
+resetting the brightness when necessary, but this may not work in all
+cases. 
+
+Transition times from 0-300 deciseconds (i.e. 0 - 30 seconds) have
+been tested to work.
+
 ###Groups
 
 You can also work with the groups functionality of the Bridge. If groups aren't working, try re-setting the bridge by unpluging it and plugging it back again.

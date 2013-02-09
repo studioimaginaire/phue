@@ -12,7 +12,7 @@ else:
 
 import logging
 logger = logging.getLogger('phue')
-logging.basicConfig(level=logging.INFO)
+#logging.basicConfig(level=logging.INFO)
 logging.basicConfig(level=logging.DEBUG)
 
 
@@ -44,18 +44,36 @@ class Light(object):
         self._xy = None
         self._colortemp = None
         self._alert = None
+        self.transitiontime=None # default
+
+
+    # Wrapper functions for get/set through the bridge, adding support for
+    # remembering the transitiontime parameter if the user has set it
+    def _get(self, *args, **kwargs):
+        return self.bridge.get_light(self.light_id, *args, **kwargs)
+    def _set(self, *args, **kwargs):
+
+        if self.transitiontime is not None:
+            kwargs['transitiontime'] = self.transitiontime
+            logger.debug("Setting with transitiontime = {0} ds = {1} s".format(self.transitiontime, float(self.transitiontime)/10))
+            
+            if args[0] == 'on' and args[1] == False:
+                self._reset_bri_after_on = True
+        return self.bridge.set_light(self.light_id, *args, **kwargs)
        
     @property
     def name(self):
         '''Get or set the name of the light [string]'''
-        self._name = self.bridge.get_light(self.light_id, 'name')
+        #self._name = self.bridge.get_light(self.light_id, 'name')
+        self._name = self._get('name')
         return self._name
 
     @name.setter
     def name(self, value):
         old_name = self.name
         self._name = value
-        self.bridge.set_light(self.light_id, 'name', self._name)
+        #self.bridge.set_light(self.light_id, 'name', self._name)
+        self._set('name', self._name)
 
         logger.debug("Renaming light from '{0}' to '{1}'".format(old_name, value))
         
@@ -65,61 +83,77 @@ class Light(object):
     @property
     def on(self):
         '''Get or set the state of the light [True|False]'''
-        self._on = self.bridge.get_light(self.light_id, 'on')
+        self._on = self._get('on')
         return self._on
 
     @on.setter
     def on(self, value):
+
+        # Some added code here to work around known bug where 
+        # turning off with transitiontime set makes it restart on brightness = 1
+        # see http://www.everyhue.com/vanilla/discussion/204/bug-with-brightness-when-requesting-ontrue-transitiontime5
+
+        # if we're turning off, save whether this bug in the hardware has been invoked
+        if self._on == True and value ==False:
+            self._reset_bri_after_on = self.transitiontime is not None
+            if self._reset_bri_after_on: logger.warning('Turned off light with transitiontime specified, brightness will be reset on power on')
+
+        self._set('on', value)
+
+        # work around bug by resetting brightness after a power on
+        if self._on == False and value ==True:
+            if self._reset_bri_after_on:
+                logger.warning('Light was turned off with transitiontime specified, brightness needs to be reset now.')
+                self.brightness = self._brightness
+                self._reset_bri_after_on=False
+
         self._on = value
-        self.bridge.set_light(self.light_id, 'on', self._on)
 
     @property
     def colormode(self):
         '''Get the color mode of the light [hue|xy|ct]'''
-        self._colormode = self.bridge.get_light(self.light_id, 'colormode')
+        self._colormode = self._get('colormode')
         return self._colormode
     
     @property
     def brightness(self):
-        '''Get or set the brightness of the light [0-254]'''
+        '''Get or set the brightness of the light [0-254]. 
         
-        self._brightness = self.bridge.get_light(self.light_id, 'bri')
+        0 is not off'''
+        
+        self._brightness = self._get('bri')
         return self._brightness
 
     @brightness.setter
     def brightness(self, value):
         self._brightness = value
-        result = self.bridge.set_light(self.light_id, 'bri', self._brightness)
-        #try:
-        #except:
-            #pass
-
+        result = self._set('bri', self._brightness)
     
     @property
     def hue(self):
         '''Get or set the hue of the light [0-65535]'''
-        self._hue = self.bridge.get_light(self.light_id, 'hue')
+        self._hue = self._get('hue')
         return self._hue
 
     @hue.setter
     def hue(self, value):
         self._hue = value
-        self.bridge.set_light(self.light_id, 'hue', self._hue)
+        self._set('hue', self._hue)
 
     @property
     def saturation(self):
-        '''Get or set the saturation of the light [0-255]
+        '''Get or set the saturation of the light [0-254]
         
         0 = white
-        255 = most saturated
+        254 = most saturated
         '''
-        self._saturation = self.bridge.get_light(self.light_id, 'sat')
+        self._saturation = self._get(self.light_id, 'sat')
         return self._saturation
 
     @saturation.setter
     def saturation(self, value):
         self._saturation = value
-        self.bridge.set_light(self.light_id, 'sat', self._saturation)
+        self._set('sat', self._saturation)
 
     @property
     def xy(self):
@@ -127,19 +161,34 @@ class Light(object):
         
         This is in a color space similar to CIE 1931 (but not quite identical)
         '''
-        self._xy = self.bridge.get_light(self.light_id, 'xy')
+        self._xy = self._get('xy')
         return self._xy
 
     @xy.setter
     def xy(self, value):
         self._xy = value
-        self.bridge.set_light(self.light_id, 'xy', self._xy)
+        self._set('xy', self._xy)
 
+
+    @property
+    def colortemp(self):
+        '''Get or set the color temperature of the light, in units of mireds [154-500]'''
+        self._colortemp = self._get( 'ct')
+        return self._colortemp
+
+    @colortemp.setter
+    def colortemp(self, value):
+        if value < 154:
+            logger.warn('154 mireds is coolest allowed color temp')
+        elif value > 500:
+            logger.warn('500 mireds is warmest allowed color temp')
+        self._colortemp = value
+        self._set('ct', self._colortemp)
 
     @property
     def colortemp_k(self):
         '''Get or set the color temperature of the light, in units of Kelvin [2000-6500]'''
-        self._colortemp = self.bridge.get_light(self.light_id, 'ct')
+        self._colortemp = self._get('ct')
         return int(round(1e6/self._colortemp))
 
     @colortemp_k.setter
@@ -151,39 +200,22 @@ class Light(object):
             logger.warn('2000 K is min allowed color temp')
             value = 2000
  
-    
         colortemp_mireds = int(round(1e6/value))
         logger.debug("{0:d} K is {1} mireds".format(value, colortemp_mireds))
         self.colortemp = colortemp_mireds
-        #self.bridge.set_light(self.light_id, 'ct', self._colortemp)
 
  
     @property
-    def colortemp(self):
-        '''Get or set the color temperature of the light, in units of mireds [154-500]'''
-        self._colortemp = self.bridge.get_light(self.light_id, 'ct')
-        return self._colortemp
-
-    @colortemp.setter
-    def colortemp(self, value):
-        if value < 154:
-            logger.warn('154 mireds is coolest allowed color temp')
-        elif value > 500:
-            logger.warn('500 mireds is warmest allowed color temp')
-        self._colortemp = value
-        self.bridge.set_light(self.light_id, 'ct', self._colortemp)
-
-    @property
     def alert(self):
         '''Get or set the alert state of the light [select|lselect|none]'''
-        self._alert = self.bridge.get_light(self.light_id, 'alert')
+        self._alert = self._get('alert')
         return self._alert
 
     @alert.setter
     def alert(self, value):
         if value is None: value = 'none'
         self._alert = value
-        self.bridge.set_light(self.light_id, 'alert', self._alert)
+        self._set('alert', self._alert)
 
 class Bridge(object):
     """ Interface to the Hue ZigBee bridge 
@@ -358,18 +390,33 @@ class Bridge(object):
             return state['state'][parameter]
 
 
-    # light_id can be a single lamp or an array of lamps
-    # parameters: 'on' : True|False , 'bri' : 0-254, 'sat' : 0-254, 'ct': 154-500
-    def set_light(self, light_id, parameter, value = None):
+    def set_light(self, light_id, parameter, value = None, transitiontime=None):
+        """ Adjust properties of one or more lights. 
+
+        light_id can be a single lamp or an array of lamps
+        parameters: 'on' : True|False , 'bri' : 0-254, 'sat' : 0-254, 'ct': 154-500
+
+        transitiontime : in **deciseconds**, time for this transition to take place
+                         Note that transitiontime only applies to *this* light
+                         command, it is not saved as a setting for use in the future!
+                         Use the Light class' transitiontime attribute if you want
+                         persistent time settings.
+
+        """
         if type(parameter) == dict:
             data = parameter
         else:
             data = {parameter : value}
+
+        if transitiontime is not None:
+            data['transitiontime'] = int(round(transitiontime)) # must be int for request format
+
         light_id_array = light_id
         if type(light_id) == int or type(light_id) == str or type(light_id) == unicode:
             light_id_array = [light_id]
         result = []
         for light in light_id_array:
+            logger.debug(str(data))
             if parameter  == 'name':
                 result.append(self.request('PUT', '/api/' + self.username + '/lights/'+ str(light_id), json.dumps(data)))
             else:
