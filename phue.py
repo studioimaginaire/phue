@@ -17,6 +17,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 
 # phue by Nathanaël Lécaudé - A Philips Hue Python library
+# Contributions by Marshall Perrin
 # https://github.com/studioimaginaire/phue
 # Original protocol hacking by rsmck : http://rsmck.co.uk/hue
 
@@ -252,9 +253,6 @@ class Bridge(object):
         else:
             self.config_file_path = os.path.join(os.getcwd(),'.python_hue')
 
-        if ip is None:
-            raise ValueError("You must specify an IP address when creating a Bridge!")
-
         self.ip = ip
         self.username = username
         self.lights_by_id = {}
@@ -311,7 +309,7 @@ class Bridge(object):
         logger.info('Attempting to connect to the bridge...')
         # If the ip and username were provided at class init
         if self.ip is not None and self.username is not None:
-            logger.info('Uding ip: ' + self.ip)
+            logger.info('Using ip: ' + self.ip)
             logger.info('Using username: ' + self.username)
             return
         
