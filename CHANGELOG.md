@@ -1,5 +1,17 @@
 #phue changelog
 
+Additions by Marshall Perrin: 
+
+* Add access to Light objects via direct indexing of the Bridge object via __getitem__
+* Implement real logging using Python's logging module, including error checking
+  and display of responses from the server.
+* Add function colortemp_k for color temperatures in Kelvin.
+* Some additional error checking for invalid or missing parameters
+* More details in docstrings.
+
+
+
+
 ##r7
 * Added docstrings to Light properties
 * Added colormode property to Light class
