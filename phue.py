@@ -443,7 +443,7 @@ class Bridge(object):
     def set_group(self, group_id, parameter, value = None):
         if type(parameter) == dict:
             data = parameter
-        if parameter == 'lights' and type(value) == list:
+        elif parameter == 'lights' and type(value) == list:
             data = {parameter : [str(x) for x in value] }
         else:
             data = {parameter : value}
