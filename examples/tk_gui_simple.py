@@ -2,6 +2,11 @@
 from Tkinter import *
 from phue import Bridge
 
+'''
+This example creates a slider that controls the
+brightness of the first 3 lights.
+'''
+
 b = Bridge() # Enter bridge IP here.
 
 #If running for the first time, press button on bridge and run with b.connect() uncommented
