@@ -45,7 +45,7 @@ class Light(object):
         self._xy = None
         self._colortemp = None
         self._alert = None
-        self.transitiontime=None # default
+        self.transitiontime = None # default
 
 
     # Wrapper functions for get/set through the bridge, adding support for
