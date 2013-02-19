@@ -1,6 +1,6 @@
+#!/usr/bin/python
 from phue import Bridge
 import random
-
 
 b = Bridge() # Enter bridge IP here.
 
