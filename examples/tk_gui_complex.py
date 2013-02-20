@@ -14,6 +14,7 @@ b = Bridge() # Enter bridge IP here.
 
 b.set_light([1,2,3], 'on', True)
 
+'''
 def sel1(data):
     b.set_light(1,{'bri':int(data), 'transitiontime': 1})
 
@@ -22,12 +23,13 @@ def sel2(data):
 
 def sel3(data):
     b.set_light(3,{'bri':int(data), 'transitiontime': 1})
-
+'''
 root = Tk()
 
 horizontal_frame = Frame(root)
 horizontal_frame.pack(side= BOTTOM)
 
+'''
 channel1_frame = Frame(horizontal_frame)
 channel1_frame.pack(side = LEFT)
 
@@ -60,5 +62,25 @@ scale3.pack(side = TOP)
 label3 = Label(channel3_frame)
 label3.config(text = b.get_light(3,'name'))
 label3.pack(side = TOP)
+'''
+
+lights = b.get_light_objects('id')
+
+for light_id in lights:
+    channel_frame = Frame(horizontal_frame)
+    channel_frame.pack(side = LEFT)
+    
+    scale = Scale( channel_frame, from_ = 254, to = 0, command= lambda x: b.set_light(light_id,{'bri':int(x), 'transitiontime': 1}), length = 200 )
+    print light_id
+    scale.set(b.get_light(light_id,'bri'))
+    scale.pack(side = TOP)
+
+    label = Label(channel_frame)
+    label.config(text = b.get_light(light_id,'name'))
+    label.pack(side = TOP)
+
+
+
+
 
 root.mainloop()
