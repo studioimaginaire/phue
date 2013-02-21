@@ -12,8 +12,7 @@ else:
 
 import logging
 logger = logging.getLogger('phue')
-#logging.basicConfig(level=logging.INFO)
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 
 
 # phue by Nathanaël Lécaudé - A Philips Hue Python library
@@ -238,7 +237,7 @@ class Bridge(object):
 
     
     """
-    def __init__(self, ip = None, username = None):
+    def __init__(self, ip = None, username = None, logging = 'info'):
         """ Initialization function. 
 
         Parameters:
@@ -248,6 +247,8 @@ class Bridge(object):
         username : string, optional
 
         """
+        self.set_logging(logging)
+
         if os.access(os.getenv(USER_HOME),os.W_OK):
             self.config_file_path = os.path.join(os.getenv(USER_HOME),'.python_hue')
         else:
@@ -263,6 +264,12 @@ class Bridge(object):
         self.seconds = 10
         
         self.connect()
+    
+    def set_logging(self, level):
+        if level == 'debug':
+            logger.setLevel(logging.DEBUG)
+        elif level == 'info':
+            logger.setLevel(logging.INFO)
     
     @property
     def name(self):
@@ -426,8 +433,7 @@ class Bridge(object):
             if 'error' in result[-1][0].keys():
                 logger.warn("ERROR: {0} for light {1}".format(result[-1][0]['error']['description'], light) )
 
-        
-
+        logger.debug(result)
         return result
     
     def get_group(self, group_id = None, parameter = None):
