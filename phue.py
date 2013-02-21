@@ -350,10 +350,10 @@ class Bridge(object):
         lights = self.get_light()
         for light_id in lights:
             if PY3K:
-                if unicode(name, encoding='utf-8') == lights[light_id]['name']:
+                if name == lights[light_id]['name']:
                     return light_id
             else:
-                if name == lights[light_id]['name']:
+                if unicode(name, encoding='utf-8') == lights[light_id]['name']:
                     return light_id                
         return False
 
