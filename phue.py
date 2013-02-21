@@ -297,7 +297,10 @@ class Bridge(object):
 
         result = connection.getresponse()
         connection.close()
-        return json.loads(result.read())
+        if PY3K:
+            return json.loads(str(result.read(), encoding='utf-8'))
+        else:
+            return json.loads(result.read())
     
     def register_app(self):
         registration_request = {"username": "python_hue", "devicetype": "python_hue"}
