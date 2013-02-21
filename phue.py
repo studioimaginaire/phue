@@ -349,8 +349,12 @@ class Bridge(object):
     def get_light_id_by_name(self,name):
         lights = self.get_light()
         for light_id in lights:
-            if name == lights[light_id]['name']:
-                return light_id
+            if PY3K:
+                if unicode(name, encoding='utf-8') == lights[light_id]['name']:
+                    return light_id
+            else:
+                if name == lights[light_id]['name']:
+                    return light_id                
         return False
 
     #Returns a dictionary containing the lights, either by name or id (use 'id' or 'name' as the mode)
