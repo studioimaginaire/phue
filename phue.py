@@ -6,6 +6,11 @@ import os
 import platform
 import sys
 if sys.version_info[0] > 2:
+    PY3K = True
+else:
+    PY3K = False
+
+if PY3K:
     import http.client as httplib
 else:
     import httplib
@@ -382,8 +387,13 @@ class Bridge(object):
 
     def get_light(self, light_id = None, parameter = None):
         """ Gets state by light_id and parameter"""
-        if type(light_id) == str or type(light_id) == unicode:
-            light_id = self.get_light_id_by_name(light_id)
+        
+        if PY3K:
+            if type(light_id) == str:
+                light_id = self.get_light_id_by_name(light_id)
+        else:
+            if type(light_id) == str or type(light_id) == unicode:
+                light_id = self.get_light_id_by_name(light_id)
         if light_id == None:
             return self.request('GET', '/api/' + self.username + '/lights/' )
         state = self.request('GET', '/api/' + self.username + '/lights/' + str(light_id))
@@ -417,18 +427,28 @@ class Bridge(object):
             data['transitiontime'] = int(round(transitiontime)) # must be int for request format
 
         light_id_array = light_id
-        if type(light_id) == int or type(light_id) == str or type(light_id) == unicode:
-            light_id_array = [light_id]
+        if PY3K:
+            if type(light_id) == int or type(light_id) == str:
+                light_id_array = [light_id]
+        else:
+            if type(light_id) == int or type(light_id) == str or type(light_id) == unicode:
+                light_id_array = [light_id]            
         result = []
         for light in light_id_array:
             logger.debug(str(data))
             if parameter  == 'name':
                 result.append(self.request('PUT', '/api/' + self.username + '/lights/'+ str(light_id), json.dumps(data)))
             else:
-                if type(light) == str or type(light) == unicode:
-                    converted_light = self.get_light_id_by_name(light)
+                if PY3K:
+                    if type(light) == str or type(light):
+                        converted_light = self.get_light_id_by_name(light)
+                    else:
+                        converted_light = light
                 else:
-                    converted_light = light
+                    if type(light) == str or type(light) == unicode:
+                            converted_light = self.get_light_id_by_name(light)
+                    else:
+                        converted_light = light
                 result.append(self.request('PUT', '/api/' + self.username + '/lights/'+ str(converted_light) + '/state', json.dumps(data)))
             if 'error' in result[-1][0].keys():
                 logger.warn("ERROR: {0} for light {1}".format(result[-1][0]['error']['description'], light) )
