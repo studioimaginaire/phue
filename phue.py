@@ -325,7 +325,7 @@ class Bridge(object):
                 with open(self.config_file_path) as f:
                     config = json.loads(f.read())
                     if self.ip is None:
-                        self.ip = config.keys()[0]
+                        self.ip = list(config.keys())[0]
                         logger.info('Using ip from config: ' + self.ip)
                     else:
                         logger.info('Using ip: ' + self.ip)
