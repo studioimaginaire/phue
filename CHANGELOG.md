@@ -1,6 +1,9 @@
 #phue changelog
 
 ##r7
+* Added support for Python 3 (Nathanaël Lécaudé)
+* Logging level can be set with b.set_logging() (Nathanaël Lécaudé)
+* Logging level can be set at init: b = Bridge(logging = 'debug') (Nathanaël Lécaudé)
 * Added docstrings to Light properties (Nathanaël Lécaudé)
 * Added colormode property to Light class (Nathanaël Lécaudé)
 * IP is now optional if present in config file (Nathanaël Lécaudé)
@@ -11,8 +14,7 @@
 * Renamed set_state and get_state to set_light and get_light (Nathanaël Lécaudé)
 * Fixed important bug when using set_state with a list of lights (Nathanaël Lécaudé)
 * Add access to Light objects via direct indexing of the Bridge object via __getitem__ (Marshall Perrin)
-* Implement real logging using Python's logging module, including error checking
-  and display of responses from the server. (Marshall Perrin)
+* Implement real logging using Python's logging module, including error checking and display of responses from the server. (Marshall Perrin)
 * Add function colortemp_k for color temperatures in Kelvin. (Marshall Perrin)
 * Some additional error checking for invalid or missing parameters (Marshall Perrin)
 * More details in docstrings. (Marshall Perrin)

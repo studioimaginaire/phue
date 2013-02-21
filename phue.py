@@ -152,7 +152,7 @@ class Light(object):
         0 = white
         254 = most saturated
         '''
-        self._saturation = self._get(self.light_id, 'sat')
+        self._saturation = self._get('sat')
         return self._saturation
 
     @saturation.setter
