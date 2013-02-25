@@ -50,6 +50,8 @@ class Light(object):
         self._colortemp = None
         self._alert = None
         self.transitiontime = None # default
+        self._reset_bri_after_on = None
+
 
 
     # Wrapper functions for get/set through the bridge, adding support for
@@ -99,18 +101,18 @@ class Light(object):
         # see http://www.everyhue.com/vanilla/discussion/204/bug-with-brightness-when-requesting-ontrue-transitiontime5
 
         # if we're turning off, save whether this bug in the hardware has been invoked
-        if self._on == True and value ==False:
+        if self._on == True and value == False:
             self._reset_bri_after_on = self.transitiontime is not None
             if self._reset_bri_after_on: logger.warning('Turned off light with transitiontime specified, brightness will be reset on power on')
 
         self._set('on', value)
 
         # work around bug by resetting brightness after a power on
-        if self._on == False and value ==True:
+        if self._on == False and value == True:
             if self._reset_bri_after_on:
                 logger.warning('Light was turned off with transitiontime specified, brightness needs to be reset now.')
                 self.brightness = self._brightness
-                self._reset_bri_after_on=False
+                self._reset_bri_after_on = False
 
         self._on = value
 
