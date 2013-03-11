@@ -305,7 +305,7 @@ class Bridge(object):
             return json.loads(result.read())
     
     def register_app(self):
-        registration_request = {"username": "python_hue", "devicetype": "python_hue"}
+        registration_request = {"devicetype": "python_hue"}
         data = json.dumps(registration_request)
         response = self.request('POST', '/api', data)
         for line in response:
