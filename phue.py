@@ -459,7 +459,7 @@ class Bridge(object):
                     else:
                         converted_light = light
                 result.append(self.request('PUT', '/api/' + self.username + '/lights/'+ str(converted_light) + '/state', json.dumps(data)))
-            if 'error' in result[-1][0].keys():
+            if 'error' in list(result[-1][0].keys()):
                 logger.warn("ERROR: {0} for light {1}".format(result[-1][0]['error']['description'], light) )
 
         logger.debug(result)
