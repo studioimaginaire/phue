@@ -449,7 +449,7 @@ class Bridge(object):
                 result.append(self.request('PUT', '/api/' + self.username + '/lights/'+ str(light_id), json.dumps(data)))
             else:
                 if PY3K:
-                    if type(light) == str or type(light):
+                    if type(light) == str:
                         converted_light = self.get_light_id_by_name(light)
                     else:
                         converted_light = light
