@@ -1,6 +1,19 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+'''
+phue by Nathanaël Lécaudé - A Philips Hue Python library
+Contributions by Marshall Perrin
+https://github.com/studioimaginaire/phue
+Original protocol hacking by rsmck : http://rsmck.co.uk/hue
+
+Published under the GWTFPL - http://www.wtfpl.net
+
+"Hue Personal Wireless Lighting" is a trademark owned by Koninklijke Philips Electronics N.V., see www.meethue.com for more information.
+I am in no way affiliated with the Philips organization.
+
+'''
+
 import json
 import os
 import platform
@@ -18,12 +31,6 @@ else:
 import logging
 logger = logging.getLogger('phue')
 logging.basicConfig(level=logging.INFO)
-
-
-# phue by Nathanaël Lécaudé - A Philips Hue Python library
-# Contributions by Marshall Perrin
-# https://github.com/studioimaginaire/phue
-# Original protocol hacking by rsmck : http://rsmck.co.uk/hue
 
 if platform.system() == 'Windows':
     USER_HOME = 'USERPROFILE'

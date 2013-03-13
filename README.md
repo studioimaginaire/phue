@@ -205,3 +205,11 @@ This is a great way to build quick prototypes on iOS as you don't need to compil
 See this little example:
 
 http://www.youtube.com/embed/6K-fxWG6JSs
+
+##License
+
+WTFPL - http://www.wtfpl.net
+
+"Hue Personal Wireless Lighting" is a trademark owned by Koninklijke Philips Electronics N.V., see www.meethue.com for more information.
+I am in no way affiliated with the Philips organization.
+
