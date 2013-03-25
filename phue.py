@@ -65,7 +65,7 @@ class Light(object):
         return '<%s.%s object "%s" at %s>' % (
             self.__class__.__module__,
             self.__class__.__name__,
-            self.name,
+            self.name.encode('utf-8'),
             hex(id(self))
         )
 
