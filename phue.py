@@ -65,7 +65,7 @@ class Light(object):
         return '<%s.%s object "%s" at %s>' % (
             self.__class__.__module__,
             self.__class__.__name__,
-            self.name.encode('utf-8'),
+            self.name,
             hex(id(self))
         )
 
@@ -86,7 +86,10 @@ class Light(object):
     @property
     def name(self):
         '''Get or set the name of the light [string]'''
-        self._name = self._get('name')
+        if PY3K:
+            self._name = self._get('name')
+        else:
+            self._name = self._get('name').encode('utf-8')
         return self._name
 
     @name.setter
