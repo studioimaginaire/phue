@@ -640,13 +640,12 @@ class Bridge(object):
     def delete_group(self, group_id):
         return self.request('DELETE', '/api/' + self.username + '/groups/' + str(group_id))
 
-
-    ##### Schedules #####
     @property
     def groups(self):
         """ Access groups as a list """
         return [LightGroup(self, groupid) for groupid in  self.get_group().keys()]
 
+    ##### Schedules #####
     def get_schedule(self, schedule_id = None, parameter = None):
         if schedule_id == None:
             return self.request('GET', '/api/' + self.username + '/schedules')
