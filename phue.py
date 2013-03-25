@@ -60,6 +60,14 @@ class Light(object):
         self._reset_bri_after_on = None
 
 
+    def __repr__(self):
+        # like default python repr function, but add light name
+        return '<%s.%s object "%s" at %s>' % (
+            self.__class__.__module__,
+            self.__class__.__name__,
+            self.name,
+            hex(id(self))
+        )
 
     # Wrapper functions for get/set through the bridge, adding support for
     # remembering the transitiontime parameter if the user has set it
@@ -78,7 +86,6 @@ class Light(object):
     @property
     def name(self):
         '''Get or set the name of the light [string]'''
-        #self._name = self.bridge.get_light(self.light_id, 'name')
         self._name = self._get('name')
         return self._name
 
@@ -86,7 +93,6 @@ class Light(object):
     def name(self, value):
         old_name = self.name
         self._name = value
-        #self.bridge.set_light(self.light_id, 'name', self._name)
         self._set('name', self._name)
 
         logger.debug("Renaming light from '{0}' to '{1}'".format(old_name, value))
@@ -151,7 +157,7 @@ class Light(object):
 
     @hue.setter
     def hue(self, value):
-        self._hue = value
+        self._hue = int(value)
         self._set('hue', self._hue)
 
     @property
@@ -274,17 +280,24 @@ class Bridge(object):
         self.lights_by_name = {}
         self._name = None
 
-        self.minutes = 600
-        self.seconds = 10
+        #self.minutes = 600 # these do not seem to be used anywhere?
+        #self.seconds = 10
         
         self.connect()
     
     def set_logging(self, level):
+        """ Change logging level for this bridge and all lights, groups, etc on it
+        See  python's logging module for an overview of logging functionality
+
+        level : string, 'info' or 'debug'
+
+        """
         if level == 'debug':
             logger.setLevel(logging.DEBUG)
         elif level == 'info':
             logger.setLevel(logging.INFO)
-    
+        logger.info("Logging level set to "+level)
+
     @property
     def name(self):
         '''Get or set the name of the bridge [string]'''
@@ -298,20 +311,26 @@ class Bridge(object):
         self.request('PUT', '/api/' + self.username + '/config', json.dumps(data))
 
     def request(self,  mode = 'GET', address = None, data = None):
+        """ Utility function for HTTP GET/PUT requests for the API"""
         connection = httplib.HTTPConnection(self.ip)
         if mode == 'GET' or mode == 'DELETE':
             connection.request(mode, address)
         if mode == 'PUT' or mode == 'POST':
             connection.request(mode, address, data)
 
+        logger.debug("{0} {1} {2}".format(mode, address, str(data)))
+
         result = connection.getresponse()
         connection.close()
         if PY3K:
             return json.loads(str(result.read(), encoding='utf-8'))
         else:
-            return json.loads(result.read())
-    
+            result_str = result.read()
+            logger.debug(result_str)
+            return json.loads(result_str)
+
     def register_app(self):
+        """ Register this computer with the Hue bridge hardware and save the resulting access token """
         registration_request = {"devicetype": "python_hue"}
         data = json.dumps(registration_request)
         response = self.request('POST', '/api', data)
@@ -330,6 +349,7 @@ class Bridge(object):
                         logger.info('Unknown username')
     
     def connect(self):
+        """ Connect to the Hue bridge """
         logger.info('Attempting to connect to the bridge...')
         # If the ip and username were provided at class init
         if self.ip is not None and self.username is not None:
@@ -356,6 +376,7 @@ class Bridge(object):
                 self.register_app()
 
     def get_light_id_by_name(self,name):
+        """ Lookup a light id based on string name. Case-sensitive. """
         lights = self.get_light()
         for light_id in lights:
             if PY3K:
@@ -366,8 +387,10 @@ class Bridge(object):
                     return light_id                
         return False
 
-    #Returns a dictionary containing the lights, either by name or id (use 'id' or 'name' as the mode)
     def get_light_objects(self, mode = 'list'):
+        """Returns a collection containing the lights, either by name or id (use 'id' or 'name' as the mode)
+        The returned collection can be either a list (default), or a dict.
+        Set mode='id' for a dict by light ID, or mode='name' for a dict by light name.   """
         if self.lights_by_id == {}:
             lights = self.request('GET', '/api/' + self.username + '/lights/')
             for light in lights:
@@ -381,6 +404,8 @@ class Bridge(object):
             return [ self.lights_by_id[x] for x in range(1, len(self.lights_by_id) + 1) ]
   
     def __getitem__(self, key):
+        """ Lights are accessibly by indexing the bridge either with
+        an integer index or string name. """
         if self.lights_by_id == {}:
             self.get_light_objects()
 
@@ -483,6 +508,13 @@ class Bridge(object):
             return self.request('GET', '/api/' + self.username + '/groups/'+  str(group_id))['action'][parameter]
 
     def set_group(self, group_id, parameter, value = None):
+        """ Change light settings for a group
+
+        group_id : int, id number for group
+        parameter : 'name' or 'lights'
+        value: string, or list of light IDs if you're setting the lights
+
+        """
         if type(parameter) == dict:
             data = parameter
         elif parameter == 'lights' and type(value) == list:
@@ -496,11 +528,28 @@ class Bridge(object):
             return self.request('PUT', '/api/' + self.username + '/groups/'+ str(group_id) + '/action', json.dumps(data))
 
     def create_group(self, name, lights = None):
+        """ Create a group of lights
+
+        Parameters
+        ------------
+        name : string
+            Name for this group of lights
+        lights : list
+            List of lights to be in the group.
+
+        """
         data = {'lights' : [str(x) for x in lights], 'name': name}
         return self.request('POST', '/api/' + self.username + '/groups/', json.dumps(data))
 
     def delete_group(self, group_id):
         return self.request('DELETE', '/api/' + self.username + '/groups/' + str(group_id))
+
+
+    ##### Schedules #####
+    @property
+    def groups(self):
+        """ Access groups as a list """
+        return [LightGroup(self, groupid) for groupid in  self.get_group().keys()]
 
     def get_schedule(self, schedule_id = None, parameter = None):
         if schedule_id == None:
