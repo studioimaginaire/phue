@@ -62,12 +62,11 @@ class Light(object):
 
     def __repr__(self):
         # like default python repr function, but add light name
-        return '<%s.%s object "%s" at %s>' % (
+        return '<{0}.{1} object "{2}" at {3}>'.format(
             self.__class__.__module__,
             self.__class__.__name__,
             self.name,
-            hex(id(self))
-        )
+            hex(id(self)))
 
     # Wrapper functions for get/set through the bridge, adding support for
     # remembering the transitiontime parameter if the user has set it
