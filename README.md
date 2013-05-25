@@ -16,6 +16,9 @@ It will automatically get the md5 username for you, if the button is not pressed
 
 ```
 sudo easy_install phue
+```
+or
+```
 pip install phue
 ```
 
