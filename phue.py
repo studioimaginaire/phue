@@ -700,8 +700,7 @@ class Bridge(object):
         }
         return self.request('POST', '/api/' + self.username + '/schedules', json.dumps(schedule))
 
-    def create_group_schedule(
-            self, name, time, group_id, data, description=' '):
+    def create_group_schedule(self, name, time, group_id, data, description=' '):
         schedule = {
             'name': name,
             'time': time,
@@ -727,4 +726,3 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     b = Bridge(args.host)
-
