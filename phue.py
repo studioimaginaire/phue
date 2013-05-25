@@ -362,7 +362,7 @@ class Bridge(object):
 
 
     """
-    def __init__(self, ip=None, username=None, logging='info'):
+    def __init__(self, ip=None, username=None):
         """ Initialization function.
 
         Parameters:
@@ -372,7 +372,6 @@ class Bridge(object):
         username : string, optional
 
         """
-        self.set_logging(logging)
 
         if os.access(os.getenv(USER_HOME), os.W_OK):
             self.config_file_path = os.path.join(
@@ -390,19 +389,6 @@ class Bridge(object):
         # self.seconds = 10
 
         self.connect()
-
-    def set_logging(self, level):
-        """ Change logging level for this bridge and all lights, groups, etc on it
-        See  python's logging module for an overview of logging functionality
-
-        level : string, 'info' or 'debug'
-
-        """
-        if level == 'debug':
-            logger.setLevel(logging.DEBUG)
-        elif level == 'info':
-            logger.setLevel(logging.INFO)
-        logger.info("Logging level set to " + level)
 
     @property
     def name(self):
@@ -724,5 +710,5 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--host', required=True)
     args = parser.parse_args()
-
+    logger.setLevel(logging.DEBUG)
     b = Bridge(args.host)
