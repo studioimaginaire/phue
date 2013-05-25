@@ -38,6 +38,17 @@ else:
     USER_HOME = 'HOME'
 
 
+class PhueException(Exception):
+
+    def __init__(self, id, message):
+        self.id = id
+        self.message = message
+
+
+class PhueRegistrationException(PhueException):
+    pass
+
+
 class Light(object):
 
     """ Hue Light object
@@ -438,11 +449,13 @@ class Bridge(object):
                         logger.info('Reconnecting to the bridge')
                     self.connect()
                 if 'error' in key:
-                    if line['error']['type'] == 101:
-                        logger.info(
-                            'Please press button on bridge to register application and call connect() method')
-                    if line['error']['type'] == 7:
-                        logger.info('Unknown username')
+                    error_type = line['error']['type']
+                    if error_type == 101:
+                        raise PhueRegistrationException(error_type,
+                                                        'The link button has not been pressed in the last 30 seconds.')
+                    if error_type == 7:
+                        raise PhueException(error_type,
+                                            'Unknown username')
 
     def connect(self):
         """ Connect to the Hue bridge """
@@ -711,4 +724,10 @@ if __name__ == '__main__':
     parser.add_argument('--host', required=True)
     args = parser.parse_args()
     logger.setLevel(logging.DEBUG)
-    b = Bridge(args.host)
+
+    while True:
+        try:
+            b = Bridge(args.host)
+            break
+        except PhueRegistrationException as e:
+            raw_input('Press button on Bridge then hit Enter to try again')
