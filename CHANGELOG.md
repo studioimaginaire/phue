@@ -1,6 +1,7 @@
 #phue changelog
 
 ##r7
+* Added to pypi
 * Added support for Python 3 (Nathanaël Lécaudé)
 * Logging level can be set with b.set_logging() (Nathanaël Lécaudé)
 * Logging level can be set at init: b = Bridge(logging = 'debug') (Nathanaël Lécaudé)
