@@ -721,24 +721,10 @@ class Bridge(object):
 
 if __name__ == '__main__':
     import argparse
-    b = Bridge()
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('pos1', type=list)
-    parser.add_argument('pos2')
-    parser.add_argument('pos3')
+    parser.add_argument('--host', required=True)
     args = parser.parse_args()
-    print(args.pos1)
 
-'''
-light 1 on
-light 2 off
+    b = Bridge(args.host)
 
-
-group 1 on
-group 2 off
-
-light Cuisine on
-light Cuisine off
-
-'''
