@@ -12,7 +12,7 @@ It will automatically get the md5 username for you, if the button is not pressed
 
 ##Installation
 
-###Using distutis
+###Using distutils
 
 ```
 sudo easy_install phue
