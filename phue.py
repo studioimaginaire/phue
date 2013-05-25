@@ -3,7 +3,7 @@
 
 '''
 phue by Nathanaël Lécaudé - A Philips Hue Python library
-Contributions by Marshall Perrin
+Contributions by Marshall Perrin, Justin Lintz
 https://github.com/studioimaginaire/phue
 Original protocol hacking by rsmck : http://rsmck.co.uk/hue
 
