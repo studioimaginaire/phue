@@ -142,7 +142,7 @@ class Light(object):
 
     @property
     def colormode(self):
-        '''Get the color mode of the light [hue|xy|ct]'''
+        '''Get the color mode of the light [hs|xy|ct]'''
         self._colormode = self._get('colormode')
         return self._colormode
 
