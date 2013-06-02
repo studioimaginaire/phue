@@ -583,6 +583,12 @@ class Bridge(object):
             data['transitiontime'] = int(round(
                 transitiontime))  # must be int for request format
 
+        if 'rgb' in data:
+            h, s, v = colorsys.rgb_to_hsv(*data.pop('rgb'))
+            data['hue'] = h * 65535
+            data['sat'] = s * 255
+            data['bri'] = v
+
         light_id_array = light_id
         if PY3K:
             if isinstance(light_id, int) or isinstance(light_id, str):
