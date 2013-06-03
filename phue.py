@@ -573,6 +573,9 @@ class Bridge(object):
                          Use the Light class' transitiontime attribute if you want
                          persistent time settings.
 
+        rgb : a 3-tuple of 0-1 values, e.g. (0.0, 1.0, 0.0) for green, (1.0, 0.6, 0.8)
+              for pink, or (1.0, 0.4, 0.0) for orange.
+              Note that setting this will override 'hue', 'sat', and 'bri'.
         """
         if isinstance(parameter, dict):
             data = parameter
