@@ -622,7 +622,25 @@ class Bridge(object):
         """ Access groups as a list """
         return [LightGroup(self, groupid) for groupid in self.get_group().keys()]
 
+    def get_group_id_by_name(self, name):
+        """ Lookup a group id based on string name. Case-sensitive. """
+        groups = self.get_group()
+        for group_id in groups:
+            if PY3K:
+                if name == groups[group_id]['name']:
+                    return group_id
+            else:
+                if unicode(name, encoding='utf-8') == groups[group_id]['name']:
+                    return group_id
+        return False
+
     def get_group(self, group_id=None, parameter=None):
+        if PY3K:
+            if isinstance(group_id, str):
+                group_id = self.get_group_id_by_name(group_id)
+        else:
+            if isinstance(group_id, str) or isinstance(group_id, unicode):
+                group_id = self.get_group_id_by_name(group_id)
         if group_id is None:
             return self.request('GET', '/api/' + self.username + '/groups/')
         if parameter is None:
