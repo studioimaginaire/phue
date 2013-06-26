@@ -535,7 +535,7 @@ class Bridge(object):
     @property
     def lights(self):
         """ Access lights as a list """
-        return self.get_light_objects(mode='list')
+        return [Light(self, lightid) for lightid in self.get_light().keys()]
 
     def get_api(self):
         """ Returns the full api dictionary """
