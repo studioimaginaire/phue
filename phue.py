@@ -688,23 +688,24 @@ class Bridge(object):
         result = []
         for group in group_id_array:
             logger.debug(str(data))
-            if parameter == 'name' or parameter == 'lights':
-                result.append(self.request('PUT', '/api/' + self.username + '/groups/' + str(group_id), json.dumps(data)))
-            else:
-                if PY3K:
-                    if isinstance(group, str):
-                        converted_group = self.get_group_id_by_name(group)
-                    else:
-                        converted_group = group
+            if PY3K:
+                if isinstance(group, str):
+                    converted_group = self.get_group_id_by_name(group)
                 else:
-                    if isinstance(group, str) or isinstance(group, unicode):
-                            converted_group = self.get_group_id_by_name(group)
-                    else:
-                        converted_group = group
+                    converted_group = group
+            else:
+                if isinstance(group, str) or isinstance(group, unicode):
+                        converted_group = self.get_group_id_by_name(group)
+                else:
+                    converted_group = group
+            if parameter == 'name' or parameter == 'lights':
+                result.append(self.request('PUT', '/api/' + self.username + '/groups/' + str(converted_group), json.dumps(data))) 
+            else:
                 result.append(self.request('PUT', '/api/' + self.username + '/groups/' + str(converted_group) + '/action', json.dumps(data)))
-            if 'error' in list(result[-1][0].keys()):
-                logger.warn("ERROR: {0} for group {1}".format(
-                    result[-1][0]['error']['description'], group))
+        
+        if 'error' in list(result[-1][0].keys()):
+            logger.warn("ERROR: {0} for group {1}".format(
+                result[-1][0]['error']['description'], group))
 
         logger.debug(result)
         return result
