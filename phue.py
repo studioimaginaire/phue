@@ -318,7 +318,10 @@ class LightGroup(Light):
     @property
     def name(self):
         '''Get or set the name of the light group [string]'''
-        self._name = self._get('name')
+        if PY3K:
+            self._name = self._get('name')
+        else:
+            self._name = self._get('name').encode('utf-8')
         return self._name
 
     @name.setter
