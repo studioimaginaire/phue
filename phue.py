@@ -669,7 +669,7 @@ class Bridge(object):
 
         if isinstance(parameter, dict):
             data = parameter
-        elif parameter == 'lights' and isinstance(value, list) or isinstance(value, int):
+        elif parameter == 'lights' and (isinstance(value, list) or isinstance(value, int)):
             if isinstance(value, int):
                 value = [value]
             data = {parameter: [str(x) for x in value]}
