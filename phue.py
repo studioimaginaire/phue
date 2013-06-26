@@ -678,10 +678,36 @@ class Bridge(object):
             data['transitiontime'] = int(round(
                 transitiontime))  # must be int for request format
 
-        if parameter == 'name' or parameter == 'lights':
-            return self.request('PUT', '/api/' + self.username + '/groups/' + str(group_id), json.dumps(data))
+        group_id_array = group_id
+        if PY3K:
+            if isinstance(group_id, int) or isinstance(group_id, str):
+                group_id_array = [group_id]
         else:
-            return self.request('PUT', '/api/' + self.username + '/groups/' + str(group_id) + '/action', json.dumps(data))
+            if isinstance(group_id, int) or isinstance(group_id, str) or isinstance(group_id, unicode):
+                group_id_array = [group_id]
+        result = []
+        for group in group_id_array:
+            logger.debug(str(data))
+            if parameter == 'name' or parameter == 'lights':
+                result.append(self.request('PUT', '/api/' + self.username + '/groups/' + str(group_id), json.dumps(data)))
+            else:
+                if PY3K:
+                    if isinstance(group, str):
+                        converted_group = self.get_group_id_by_name(group)
+                    else:
+                        converted_group = group
+                else:
+                    if isinstance(group, str) or isinstance(group, unicode):
+                            converted_group = self.get_group_id_by_name(group)
+                    else:
+                        converted_group = group
+                result.append(self.request('PUT', '/api/' + self.username + '/groups/' + str(converted_group) + '/action', json.dumps(data)))
+            if 'error' in list(result[-1][0].keys()):
+                logger.warn("ERROR: {0} for group {1}".format(
+                    result[-1][0]['error']['description'], group))
+
+        logger.debug(result)
+        return result
 
     def create_group(self, name, lights=None):
         """ Create a group of lights
