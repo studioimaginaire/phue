@@ -535,7 +535,7 @@ class Bridge(object):
     @property
     def lights(self):
         """ Access lights as a list """
-        return [Light(self, int(lightid) for lightid in self.get_light().keys()]
+        return [Light(self, int(lightid)) for lightid in self.get_light().keys()]
 
     def get_api(self):
         """ Returns the full api dictionary """
@@ -620,7 +620,7 @@ class Bridge(object):
     @property
     def groups(self):
         """ Access groups as a list """
-        return [LightGroup(self, int(groupid) for groupid in self.get_group().keys()]
+        return [LightGroup(self, int(groupid)) for groupid in self.get_group().keys()]
 
     def get_group_id_by_name(self, name):
         """ Lookup a group id based on string name. Case-sensitive. """
