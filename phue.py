@@ -327,6 +327,7 @@ class LightGroup(Light):
     @name.setter
     def name(self, value):
         old_name = self.name
+        self._name = value
         logger.debug("Renaming light group from '{0}' to '{1}'".format(
             old_name, value))
         self._set('name', self._name)
