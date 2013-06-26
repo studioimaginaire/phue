@@ -536,7 +536,10 @@ class Bridge(object):
             return self.lights_by_id[key]
         except:
             try:
-                return self.lights_by_name[key]
+                if PY3K:
+                    return self.lights_by_name[key]
+                else:
+                    self.lights_by_name[unicode(key, encoding='utf-8')]
             except:
                 raise KeyError(
                     'Not a valid key (integer index starting with 1, or light name): ' + str(key))
