@@ -287,9 +287,14 @@ class LightGroup(Light):
             name = group_id
             groups = bridge.get_group()
             for idnumber, info in groups.items():
-                if info['name'] == name:
-                    self.group_id = int(idnumber)
-                    break
+                if PY3K:
+                    if info['name'] == name:
+                        self.group_id = int(idnumber)
+                        break
+                else:
+                    if info['name'] == unicode(name, encoding='utf-8'):
+                        self.group_id = int(idnumber)
+                        break  
             else:
                 raise LookupError("Could not find a group by that name.")
 
