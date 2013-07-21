@@ -70,6 +70,7 @@ class Light(object):
         self._saturation = None
         self._xy = None
         self._colortemp = None
+        self._effect = None
         self._alert = None
         self.transitiontime = None  # default
         self._reset_bri_after_on = None
@@ -246,7 +247,18 @@ class Light(object):
         colortemp_mireds = int(round(1e6 / value))
         logger.debug("{0:d} K is {1} mireds".format(value, colortemp_mireds))
         self.colortemp = colortemp_mireds
-
+    
+    @property
+    def effect(self):
+        '''Check the effect setting of the light. [none|colorloop]'''
+        self._effect = self._get('effect')
+        return self._effect
+    
+    @effect.setter
+    def effect(self, value):
+        self._effect = value
+        self._set('effect', self._effect)
+    
     @property
     def alert(self):
         '''Get or set the alert state of the light [select|lselect|none]'''
