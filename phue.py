@@ -457,6 +457,37 @@ class Bridge(object):
             logger.debug(result_str)
             return json.loads(result_str)
 
+    def get_ip_address(self, set_result=False):
+
+        """ Get the bridge ip address from the meethue.com nupnp api """
+
+        connection = httplib.HTTPConnection('http://www.meethue.com')
+        connection.request('GET', '/api/nupnp')
+
+        logger.info('Connecting to meethue.com/api/nupnp')
+
+        result = connection.getresponse()
+
+        if PY3K:
+            data = json.loads(str(result.read(), encoding='utf-8'))
+        else:
+            result_str = result.read()
+            data = json.loads(result_str)
+
+        """ close connection after read() is done, to prevent issues with read() """
+
+        connection.close()
+
+        ip = str(data[0]['internalipaddress'])
+
+        if ip is not '':
+            if set_result:
+                self.ip = ip
+
+            return ip
+        else:
+            return False
+
     def register_app(self):
         """ Register this computer with the Hue bridge hardware and save the resulting access token """
         registration_request = {"devicetype": "python_hue"}
