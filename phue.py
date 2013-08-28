@@ -30,7 +30,7 @@ else:
 
 import logging
 logger = logging.getLogger('phue')
-logging.basicConfig(level=logging.INFO)
+
 
 if platform.system() == 'Windows':
     USER_HOME = 'USERPROFILE'
@@ -818,6 +818,8 @@ class Bridge(object):
 
 if __name__ == '__main__':
     import argparse
+
+    logging.basicConfig(level=logging.INFO)
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--host', required=True)
