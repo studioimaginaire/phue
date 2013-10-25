@@ -273,19 +273,19 @@ class Light(object):
         self._set('alert', self._alert)
 
 
-class LightGroup(Light):
+class Group(Light):
 
     """ A group of Hue lights, tracked as a group on the bridge
 
     Example:
 
         >>> b = Bridge()
-        >>> g1 = LightGroup(b, 1)
+        >>> g1 = Group(b, 1)
         >>> g1.hue = 50000 # all lights in that group turn blue
         >>> g1.on = False # all will turn off
 
-        >>> g2 = LightGroup(b, 'Kitchen')  # you can also look up groups by name
-        >>>                                # will raise a LookupError if the name doesn't match
+        >>> g2 = Group(b, 'Kitchen')  # you can also look up groups by name
+        >>> # will raise a LookupError if the name doesn't match
 
     """
 
@@ -359,7 +359,7 @@ class LightGroup(Light):
         self._set('lights', value)
 
 
-class AllLights(LightGroup):
+class AllLights(Group):
 
     """ All the Hue lights connected to your bridge
 
@@ -372,7 +372,7 @@ class AllLights(LightGroup):
     def __init__(self, bridge=None):
         if bridge is None:
             bridge = Bridge()
-        LightGroup.__init__(self, bridge, 0)
+        Group.__init__(self, bridge, 0)
 
 
 class Bridge(object):
@@ -675,7 +675,7 @@ class Bridge(object):
     @property
     def groups(self):
         """ Access groups as a list """
-        return [LightGroup(self, int(groupid)) for groupid in self.get_group().keys()]
+        return [Group(self, int(groupid)) for groupid in self.get_group().keys()]
 
     def get_group_id_by_name(self, name):
         """ Lookup a group id based on string name. Case-sensitive. """
