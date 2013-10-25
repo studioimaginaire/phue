@@ -461,7 +461,7 @@ class Bridge(object):
 
         """ Get the bridge ip address from the meethue.com nupnp api """
 
-        connection = httplib.HTTPConnection('http://www.meethue.com')
+        connection = httplib.HTTPConnection('www.meethue.com')
         connection.request('GET', '/api/nupnp')
 
         logger.info('Connecting to meethue.com/api/nupnp')
@@ -819,12 +819,11 @@ class Bridge(object):
 if __name__ == '__main__':
     import argparse
 
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.DEBUG)
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--host', required=True)
     args = parser.parse_args()
-    logger.setLevel(logging.DEBUG)
 
     while True:
         try:
