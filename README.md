@@ -1,23 +1,17 @@
 #phue: A Python library for Philips Hue
 
-##Introduction
-
-This is a Python library to control the Philips Hue system.
-
-Huge thanks to http://rsmck.co.uk/hue for hacking the protocol !
-
-I decided to keep it as simple as possible and not rely on external libraries like requests so it's easily portable to any system.
-
-It will automatically get the md5 username for you, if the button is not pressed it will prompt you to press it, use the connect() method to register.  Once pressed it will get the username and store in your home directory in a file called .python_hue
+Full featured Python library to control the Philips Hue lighting system.
 
 ##Features
 
-- Support for lights
-- Support for groups
-- Support for schedules
+- Compliant with the Philips Hue API 1.0
+- Support for Lights
+- Support for Groups
+- Support for Schedules
 - Compatible with Python 2.6.x and upwards
 - Compatible with Python 3
 - No dependencies
+- Simple structure, single phue.py file
 - Work in a procedural way or object oriented way
 
 ##Installation
@@ -250,6 +244,10 @@ This is a great way to build quick prototypes on iOS as you don't need to compil
 See this little example:
 
 http://www.youtube.com/embed/6K-fxWG6JSs
+
+##Acknowledgments
+
+Huge thanks to http://rsmck.co.uk/hue for hacking the protocol !
 
 ##License
 
