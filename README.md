@@ -1,4 +1,4 @@
-#phue: A Python library for the Philips Hue system.
+#phue: A Python library for Philips Hue
 
 ##Introduction
 
@@ -9,6 +9,16 @@ Huge thanks to http://rsmck.co.uk/hue for hacking the protocol !
 I decided to keep it as simple as possible and not rely on external libraries like requests so it's easily portable to any system.
 
 It will automatically get the md5 username for you, if the button is not pressed it will prompt you to press it, use the connect() method to register.  Once pressed it will get the username and store in your home directory in a file called .python_hue
+
+##Features
+
+- Support for lights
+- Support for groups
+- Support for schedules
+- Compatible with Python 2.6.x and upwards
+- Compatible with Python 3
+- No dependencies
+- Work in a procedural way or object oriented way
 
 ##Installation
 
@@ -26,7 +36,7 @@ pip install phue
 
 phue consists of a single file (phue.py) that you can put in your python search path or in site-packages (or dist-packages depending on the platform)
 You can also simply run it by putting it in the same directory as you main script file or start a python interpreter in the same directory.
-phue works with Python 2.6.x and 2.7.x  
+phue works with Python 2.6.x, 2.7.x and 3.x 
 
 ##Examples
 
@@ -65,6 +75,13 @@ b.set_light( [1,2], 'on', True)
 # Get the name of a lamp
 b.get_light(1, 'name')
 
+# You can also use light names instead of the id
+b.get_light('Kitchen')
+b.set_light('Kitchen', 'bri', 254)
+
+# Also works with lists
+b.set_light(['Bathroom', 'Garage'], 'on', False)
+
 # The set_light method can also take a dictionary as the second argument to do more fancy stuff
 # This will turn light 1 on with a transition time of 30 seconds
 command =  {'transitiontime' : 300, 'on' : True, 'bri' : 254}
@@ -73,14 +90,30 @@ b.set_light(1, command)
 
 ###Light Objects
 
-If you want to work in a more object-oriented way, you can get Light objects using the get_light_objects method. You can use 'id', 'name' or 'list' as argument, it will return a list with no arguments:
+If you want to work in a more object-oriented way, there are several ways you can get Light objects.
 
+#### Get a flat list of light objects
 ```python
 
-# Get a dictionary with the light ids as the key
+lights = b.lights
+
+# Print light names
+for l in lights:
+    print(l.name)
+    
+# Set brightness of each light to 127
+for l in lights:
+    l.brightness = 127
+
+```
+
+#### Get Light objects as dictionaries
+
+```python
+# Get a dictionary with the light id as the key
 lights = b.get_light_objects('id')
 
-# Get the name of bulb 1, set the brightness to 127
+# Get the name of light 1, set the brightness to 127
 lights[1].name
 lights[1].brightness = 127
 
@@ -90,13 +123,13 @@ light_names = b.get_light_objects('name')
 # Set the birghtness of the bulb named "Kitchen"
 light_names["Kitchen"].brightness = 254
 
-# Get lights by name
+# Set lights using name as key
 for light in ['Kitchen', 'Bedroom', 'Garage']
     light_names[light].on = True
     light_names[light].hue = 15000
     light_names[light].saturation = 120
 
-# Get a flat list of the light objects
+# Get a flat list of the light objects (same as calling b.lights)
 lights_list = b.get_light_objects('list')
 
 for light in lights_list:
