@@ -696,6 +696,9 @@ class Bridge(object):
         else:
             if isinstance(group_id, str) or isinstance(group_id, unicode):
                 group_id = self.get_group_id_by_name(group_id)
+        if group_id is False:
+            logger.error('Group name does not exit')
+            return
         if group_id is None:
             return self.request('GET', '/api/' + self.username + '/groups/')
         if parameter is None:
@@ -747,6 +750,9 @@ class Bridge(object):
                         converted_group = self.get_group_id_by_name(group)
                 else:
                     converted_group = group
+            if converted_group is False:
+                logger.error('Group name does not exit')
+                return
             if parameter == 'name' or parameter == 'lights':
                 result.append(self.request('PUT', '/api/' + self.username + '/groups/' + str(converted_group), json.dumps(data))) 
             else:
