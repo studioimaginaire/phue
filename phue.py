@@ -413,6 +413,8 @@ class Bridge(object):
         else:
             self.config_file_path = os.path.join(os.getcwd(), '.python_hue')
 
+        if not ip:
+            ip = self.get_ip_address()  
         self.ip = ip
         self.username = username
         self.lights_by_id = {}
