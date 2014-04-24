@@ -388,10 +388,10 @@ class Bridge(object):
 
     Or more succinctly just by accessing this Bridge object as a list or dict:
 
-        >>> b[0]
+        >>> b[1]
         <phue.Light at 0x10473d750>
         >>> b['Kitchen']
-        <phue.Light at 0x1046ce110>
+        <phue.Light at 0x10473d750>
 
 
 
