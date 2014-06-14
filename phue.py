@@ -18,6 +18,7 @@ import json
 import os
 import platform
 import sys
+import socket
 if sys.version_info[0] > 2:
     PY3K = True
 else:
@@ -48,6 +49,10 @@ class PhueException(Exception):
 
 
 class PhueRegistrationException(PhueException):
+    pass
+
+
+class PhueRequestTimeout(PhueException):
     pass
 
 
@@ -440,13 +445,21 @@ class Bridge(object):
 
     def request(self, mode='GET', address=None, data=None):
         """ Utility function for HTTP GET/PUT requests for the API"""
-        connection = httplib.HTTPConnection(self.ip)
-        if mode == 'GET' or mode == 'DELETE':
-            connection.request(mode, address)
-        if mode == 'PUT' or mode == 'POST':
-            connection.request(mode, address, data)
+        connection = httplib.HTTPConnection(self.ip, timeout=10)
 
-        logger.debug("{0} {1} {2}".format(mode, address, str(data)))
+        try:
+            if mode == 'GET' or mode == 'DELETE':
+                connection.request(mode, address)
+            if mode == 'PUT' or mode == 'POST':
+                connection.request(mode, address, data)
+
+            logger.debug("{0} {1} {2}".format(mode, address, str(data)))
+
+        except socket.timeout:
+            error = "{} Request to {}{} timed out.".format(mode, self.ip, address)
+
+            logger.exception(error)
+            raise PhueRequestTimeout(None, error)
 
         result = connection.getresponse()
         connection.close()
