@@ -413,8 +413,9 @@ class Bridge(object):
         """
 
         if os.getenv(USER_HOME) is not None and os.access(os.getenv(USER_HOME), os.W_OK):
-            self.config_file_path = os.path.join(
-                os.getenv(USER_HOME), '.python_hue')
+            self.config_file_path = os.path.join(os.getenv(USER_HOME), '.python_hue')
+        elif 'iPad' in platform.machine() or 'iPhone' in platform.machine() or 'iPad' in platform.machine():
+            self.config_file_path = os.path.join(os.getenv(USER_HOME), 'Documents', '.python_hue') 
         else:
             self.config_file_path = os.path.join(os.getcwd(), '.python_hue')
 
