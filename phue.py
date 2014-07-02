@@ -401,7 +401,7 @@ class Bridge(object):
 
 
     """
-    def __init__(self, ip=None, username=None):
+    def __init__(self, ip=None, username=None, config_file_path=None):
         """ Initialization function.
 
         Parameters:
@@ -412,7 +412,9 @@ class Bridge(object):
 
         """
 
-        if os.getenv(USER_HOME) is not None and os.access(os.getenv(USER_HOME), os.W_OK):
+        if config_file_path is not None:
+            self.config_file_path = config_file_path
+        elif os.getenv(USER_HOME) is not None and os.access(os.getenv(USER_HOME), os.W_OK):
             self.config_file_path = os.path.join(os.getenv(USER_HOME), '.python_hue')
         elif 'iPad' in platform.machine() or 'iPhone' in platform.machine() or 'iPad' in platform.machine():
             self.config_file_path = os.path.join(os.getenv(USER_HOME), 'Documents', '.python_hue') 
@@ -843,11 +845,15 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--host', required=True)
+    parser.add_argument('--config-file-path', required=False)
     args = parser.parse_args()
 
     while True:
         try:
-            b = Bridge(args.host)
+            b = Bridge(args.host, config_file_path=args.config_file_path)
             break
         except PhueRegistrationException as e:
-            raw_input('Press button on Bridge then hit Enter to try again')
+            if PY3K:
+                input('Press button on Bridge then hit Enter to try again')
+            else:    
+                raw_input('Press button on Bridge then hit Enter to try again')
