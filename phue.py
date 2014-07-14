@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 '''
@@ -9,9 +9,10 @@ Original protocol hacking by rsmck : http://rsmck.co.uk/hue
 
 Published under the GWTFPL - http://www.wtfpl.net
 
-"Hue Personal Wireless Lighting" is a trademark owned by Koninklijke Philips Electronics N.V., see www.meethue.com for more information.
-I am in no way affiliated with the Philips organization.
+"Hue Personal Wireless Lighting" is a trademark owned by Koninklijke Philips Electronics N.V.
+See http://www.meethue.com for more information.
 
+I am in no way affiliated with the Philips organization.
 '''
 
 import json
@@ -19,45 +20,34 @@ import os
 import platform
 import sys
 import socket
-if sys.version_info[0] > 2:
-    PY3K = True
-else:
-    PY3K = False
 
-if PY3K:
-    import http.client as httplib
-else:
-    import httplib
+PY3K = sys.version_info[0] > 2
+
+try:
+    import http.client as httplib  # Python3
+except ImportError:
+    import httplib                 # Python2
 
 import logging
 logger = logging.getLogger('phue')
 
-
-if platform.system() == 'Windows':
-    USER_HOME = 'USERPROFILE'
-else:
-    USER_HOME = 'HOME'
+USER_HOME = 'USERPROFILE' if platform.system() == 'Windows' else 'HOME'
 
 __version__ = '0.8'
 
 
 class PhueException(Exception):
-
     def __init__(self, id, message):
         self.id = id
         self.message = message
 
-
 class PhueRegistrationException(PhueException):
     pass
-
 
 class PhueRequestTimeout(PhueException):
     pass
 
-
 class Light(object):
-
     """ Hue Light object
 
     Light settings can be accessed or set via the properties of this object.
@@ -82,7 +72,7 @@ class Light(object):
 
     def __repr__(self):
         # like default python repr function, but add light name
-        return '<{0}.{1} object "{2}" at {3}>'.format(
+        return '<{}.{} object "{}" at {}>'.format(
             self.__class__.__module__,
             self.__class__.__name__,
             self.name,
@@ -94,23 +84,21 @@ class Light(object):
         return self.bridge.get_light(self.light_id, *args, **kwargs)
 
     def _set(self, *args, **kwargs):
-
-        if self.transitiontime is not None:
+        if self.transitiontime:
             kwargs['transitiontime'] = self.transitiontime
             logger.debug("Setting with transitiontime = {0} ds = {1} s".format(
                 self.transitiontime, float(self.transitiontime) / 10))
 
-            if args[0] == 'on' and args[1] is False:
+            if args[0] == 'on' and not args[1]:
                 self._reset_bri_after_on = True
         return self.bridge.set_light(self.light_id, *args, **kwargs)
 
     @property
     def name(self):
         '''Get or set the name of the light [string]'''
-        if PY3K:
-            self._name = self._get('name')
-        else:
-            self._name = self._get('name').encode('utf-8')
+        self._name = self._get('name')
+        if not PY3K:
+            self._name = self._name.encode('utf-8')
         return self._name
 
     @name.setter
@@ -141,7 +129,7 @@ class Light(object):
 
         # if we're turning off, save whether this bug in the hardware has been
         # invoked
-        if self._on and value is False:
+        if self._on and not value:
             self._reset_bri_after_on = self.transitiontime is not None
             if self._reset_bri_after_on:
                 logger.warning(
@@ -150,7 +138,7 @@ class Light(object):
         self._set('on', value)
 
         # work around bug by resetting brightness after a power on
-        if self._on is False and value is True:
+        if not self._on and value:
             if self._reset_bri_after_on:
                 logger.warning(
                     'Light was turned off with transitiontime specified, brightness needs to be reset now.')
@@ -272,11 +260,10 @@ class Light(object):
 
     @alert.setter
     def alert(self, value):
-        if value is None:
+        if not value:
             value = 'none'
         self._alert = value
         self._set('alert', self._alert)
-
 
 class Group(Light):
 
@@ -304,14 +291,11 @@ class Group(Light):
             name = group_id
             groups = bridge.get_group()
             for idnumber, info in groups.items():
-                if PY3K:
-                    if info['name'] == name:
-                        self.group_id = int(idnumber)
-                        break
-                else:
-                    if info['name'] == unicode(name, encoding='utf-8'):
-                        self.group_id = int(idnumber)
-                        break  
+                if not PY3K:
+                    name = unicode(name, encoding='utf-8')
+                if info['name'] == name:
+                    self.group_id = int(idnumber)
+                    break
             else:
                 raise LookupError("Could not find a group by that name.")
 
@@ -323,22 +307,21 @@ class Group(Light):
     def _set(self, *args, **kwargs):
         # let's get basic group functionality working first before adding
         # transition time...
-        if self.transitiontime is not None:
+        if self.transitiontime:
             kwargs['transitiontime'] = self.transitiontime
             logger.debug("Setting with transitiontime = {0} ds = {1} s".format(
                 self.transitiontime, float(self.transitiontime) / 10))
 
-            if args[0] == 'on' and args[1] is False:
+            if args[0] == 'on' and not args[1]:
                 self._reset_bri_after_on = True
         return self.bridge.set_group(self.group_id, *args, **kwargs)
 
     @property
     def name(self):
         '''Get or set the name of the light group [string]'''
-        if PY3K:
-            self._name = self._get('name')
-        else:
-            self._name = self._get('name').encode('utf-8')
+        self._name = self._get('name')
+        if not PY3K:
+            self._name = self._name.encode('utf-8')
         return self._name
 
     @name.setter
@@ -375,7 +358,7 @@ class AllLights(Group):
     ask for group 0.
     """
     def __init__(self, bridge=None):
-        if bridge is None:
+        if not bridge:
             bridge = Bridge()
         Group.__init__(self, bridge, 0)
 
@@ -412,9 +395,10 @@ class Bridge(object):
 
         """
 
-        if os.getenv(USER_HOME) is not None and os.access(os.getenv(USER_HOME), os.W_OK):
+        if (os.getenv(USER_HOME)
+        and os.access(os.getenv(USER_HOME), os.W_OK)):
             self.config_file_path = os.path.join(os.getenv(USER_HOME), '.python_hue')
-        elif 'iPad' in platform.machine() or 'iPhone' in platform.machine() or 'iPad' in platform.machine():
+        elif self.platform_is_iOS()
             self.config_file_path = os.path.join(os.getenv(USER_HOME), 'Documents', '.python_hue') 
         else:
             self.config_file_path = os.path.join(os.getcwd(), '.python_hue')
@@ -430,35 +414,40 @@ class Bridge(object):
 
         self.connect()
 
+    @classmethod
+    def platform_is_iOS(cls):
+        platform_machine = platform.machine()
+        return any([platform_machine.startswith(s)
+                    for s in 'iPad iPhone iPod'.split()])
+
     @property
     def name(self):
         '''Get or set the name of the bridge [string]'''
-        self._name = self.request(
-            'GET', '/api/' + self.username + '/config')['name']
+        api_path = '/api/{}/config'.format(self.username)
+        self._name = self.request('GET', api_path)['name']
         return self._name
 
     @name.setter
     def name(self, value):
         self._name = value
-        data = {'name': self._name}
-        self.request(
-            'PUT', '/api/' + self.username + '/config', json.dumps(data))
+        data = json.dumps({'name': self._name})
+        api_path = '/api/{}/config'.format(self.username)
+        self.request('PUT', api_path, data)
 
     def request(self, mode='GET', address=None, data=None):
         """ Utility function for HTTP GET/PUT requests for the API"""
         connection = httplib.HTTPConnection(self.ip, timeout=10)
 
         try:
-            if mode == 'GET' or mode == 'DELETE':
+            if mode in ['GET', 'DELETE']:
                 connection.request(mode, address)
-            if mode == 'PUT' or mode == 'POST':
+            elif mode in ['PUT', 'POST']:
                 connection.request(mode, address, data)
-
-            logger.debug("{0} {1} {2}".format(mode, address, str(data)))
-
+            else:
+                logger.debug('Illegal mode: ' + mode)
+            logger.debug("{} {} {}".format(mode, address, data))
         except socket.timeout:
             error = "{} Request to {}{} timed out.".format(mode, self.ip, address)
-
             logger.exception(error)
             raise PhueRequestTimeout(None, error)
 
@@ -485,8 +474,7 @@ class Bridge(object):
         if PY3K:
             data = json.loads(str(result.read(), encoding='utf-8'))
         else:
-            result_str = result.read()
-            data = json.loads(result_str)
+            data = json.loads(result.read())
 
         """ close connection after read() is done, to prevent issues with read() """
 
@@ -494,10 +482,9 @@ class Bridge(object):
 
         ip = str(data[0]['internalipaddress'])
 
-        if ip is not '':
+        if ip:
             if set_result:
                 self.ip = ip
-
             return ip
         else:
             return False
@@ -521,7 +508,7 @@ class Bridge(object):
                     if error_type == 101:
                         raise PhueRegistrationException(error_type,
                                                         'The link button has not been pressed in the last 30 seconds.')
-                    if error_type == 7:
+                    elif error_type == 7:
                         raise PhueException(error_type,
                                             'Unknown username')
 
@@ -529,26 +516,26 @@ class Bridge(object):
         """ Connect to the Hue bridge """
         logger.info('Attempting to connect to the bridge...')
         # If the ip and username were provided at class init
-        if self.ip is not None and self.username is not None:
+        if self.ip and self.username:
             logger.info('Using ip: ' + self.ip)
             logger.info('Using username: ' + self.username)
             return
 
-        if self.ip is None or self.username is None:
+        if not self.ip or not self.username:
             try:
                 with open(self.config_file_path) as f:
                     config = json.loads(f.read())
-                    if self.ip is None:
+                    if self.ip:
+                        logger.info('Using ip: ' + self.ip)
+                    else
                         self.ip = list(config.keys())[0]
                         logger.info('Using ip from config: ' + self.ip)
+                    if self.username:
+                        logger.info('Using username: ' + self.username)
                     else:
-                        logger.info('Using ip: ' + self.ip)
-                    if self.username is None:
                         self.username = config[self.ip]['username']
                         logger.info(
                             'Using username from config: ' + self.username)
-                    else:
-                        logger.info('Using username: ' + self.username)
             except Exception as e:
                 logger.info(
                     'Error opening config file, will attempt bridge registration')
@@ -556,21 +543,19 @@ class Bridge(object):
 
     def get_light_id_by_name(self, name):
         """ Lookup a light id based on string name. Case-sensitive. """
+        if not PY3K:
+            name = unicode(name, encoding='utf-8')
         lights = self.get_light()
         for light_id in lights:
-            if PY3K:
-                if name == lights[light_id]['name']:
-                    return light_id
-            else:
-                if unicode(name, encoding='utf-8') == lights[light_id]['name']:
-                    return light_id
+            if name == lights[light_id]['name']:
+                return light_id
         return False
 
     def get_light_objects(self, mode='list'):
         """Returns a collection containing the lights, either by name or id (use 'id' or 'name' as the mode)
         The returned collection can be either a list (default), or a dict.
         Set mode='id' for a dict by light ID, or mode='name' for a dict by light name.   """
-        if self.lights_by_id == {}:
+        if not self.lights_by_id:
             lights = self.request('GET', '/api/' + self.username + '/lights/')
             for light in lights:
                 self.lights_by_id[int(light)] = Light(self, int(light))
@@ -578,25 +563,24 @@ class Bridge(object):
                     'name']] = self.lights_by_id[int(light)]
         if mode == 'id':
             return self.lights_by_id
-        if mode == 'name':
+        elif mode == 'name':
             return self.lights_by_name
-        if mode == 'list':
+        elif mode == 'list':
             return [self.lights_by_id[x] for x in range(1, len(self.lights_by_id) + 1)]
 
     def __getitem__(self, key):
         """ Lights are accessibly by indexing the bridge either with
         an integer index or string name. """
-        if self.lights_by_id == {}:
+        if not self.lights_by_id:
             self.get_light_objects()
 
         try:
             return self.lights_by_id[key]
         except:
             try:
-                if PY3K:
-                    return self.lights_by_name[key]
-                else:
-                    return self.lights_by_name[unicode(key, encoding='utf-8')]
+                if not PY3K:
+                    key = unicode(key, encoding='utf-8')
+                return self.lights_by_name[key]
             except:
                 raise KeyError(
                     'Not a valid key (integer index starting with 1, or light name): ' + str(key))
@@ -612,20 +596,15 @@ class Bridge(object):
 
     def get_light(self, light_id=None, parameter=None):
         """ Gets state by light_id and parameter"""
-
-        if PY3K:
-            if isinstance(light_id, str):
-                light_id = self.get_light_id_by_name(light_id)
-        else:
-            if isinstance(light_id, str) or isinstance(light_id, unicode):
-                light_id = self.get_light_id_by_name(light_id)
-        if light_id is None:
+        if isinstance(light_id, (str, unicode)):
+            light_id = self.get_light_id_by_name(light_id)
+        if not light_id:
             return self.request('GET', '/api/' + self.username + '/lights/')
-        state = self.request(
-            'GET', '/api/' + self.username + '/lights/' + str(light_id))
-        if parameter is None:
+        api_path = '/api/{}/lights/{}'.format(self.username, light_id)
+        state = self.request('GET', api_path)
+        if not parameter:
             return state
-        if parameter == 'name':
+        elif parameter == 'name':
             return state[parameter]
         else:
             return state['state'][parameter]
@@ -648,36 +627,26 @@ class Bridge(object):
         else:
             data = {parameter: value}
 
-        if transitiontime is not None:
-            data['transitiontime'] = int(round(
-                transitiontime))  # must be int for request format
+        if transitiontime:  # must be int for request format
+            data['transitiontime'] = int(round(transitiontime))
 
         light_id_array = light_id
-        if PY3K:
-            if isinstance(light_id, int) or isinstance(light_id, str):
-                light_id_array = [light_id]
-        else:
-            if isinstance(light_id, int) or isinstance(light_id, str) or isinstance(light_id, unicode):
-                light_id_array = [light_id]
+        if isinstance(light_id, (int, str, unicode)):
+            light_id_array = [light_id]
         result = []
         for light in light_id_array:
             logger.debug(str(data))
             if parameter == 'name':
-                result.append(self.request('PUT', '/api/' + self.username + '/lights/' + str(
-                    light_id), json.dumps(data)))
+                api_path = '/api/{}/lights/{}'.format(self.username, light_id)
+                result.append(self.request('PUT', api_path, json.dumps(data)))
             else:
-                if PY3K:
-                    if isinstance(light, str):
-                        converted_light = self.get_light_id_by_name(light)
-                    else:
-                        converted_light = light
+                if isinstance(light, (str, unicode)):
+                    converted_light = self.get_light_id_by_name(light)
                 else:
-                    if isinstance(light, str) or isinstance(light, unicode):
-                            converted_light = self.get_light_id_by_name(light)
-                    else:
-                        converted_light = light
-                result.append(self.request('PUT', '/api/' + self.username + '/lights/' + str(
-                    converted_light) + '/state', json.dumps(data)))
+                    converted_light = light
+                api_path = '/api/{}/lights/{}/state'.format(self.username, converted_light)
+                
+                result.append(self.request('PUT', api_path, json.dumps(data)))
             if 'error' in list(result[-1][0].keys()):
                 logger.warn("ERROR: {0} for light {1}".format(
                     result[-1][0]['error']['description'], light))
@@ -689,38 +658,34 @@ class Bridge(object):
     @property
     def groups(self):
         """ Access groups as a list """
-        return [Group(self, int(groupid)) for groupid in self.get_group().keys()]
+        return [Group(self, int(groupid))
+                for groupid in self.get_group().keys()]
 
     def get_group_id_by_name(self, name):
         """ Lookup a group id based on string name. Case-sensitive. """
+        if not PY3K:
+            name = unicode(name, encoding='utf-8')
         groups = self.get_group()
         for group_id in groups:
-            if PY3K:
-                if name == groups[group_id]['name']:
-                    return group_id
-            else:
-                if unicode(name, encoding='utf-8') == groups[group_id]['name']:
-                    return group_id
+            if name == groups[group_id]['name']:
+                return group_id
         return False
 
     def get_group(self, group_id=None, parameter=None):
-        if PY3K:
-            if isinstance(group_id, str):
-                group_id = self.get_group_id_by_name(group_id)
-        else:
-            if isinstance(group_id, str) or isinstance(group_id, unicode):
-                group_id = self.get_group_id_by_name(group_id)
+        if isinstance(group_id, (str, unicode)):
+            group_id = self.get_group_id_by_name(group_id)
         if group_id is False:
             logger.error('Group name does not exit')
             return
-        if group_id is None:
-            return self.request('GET', '/api/' + self.username + '/groups/')
-        if parameter is None:
-            return self.request('GET', '/api/' + self.username + '/groups/' + str(group_id))
-        elif parameter == 'name' or parameter == 'lights':
-            return self.request('GET', '/api/' + self.username + '/groups/' + str(group_id))[parameter]
+        api_path = '/api/{}/groups/'.format(self.username)
+        if not group_id:
+            return self.request('GET', api_path)
+        elif not parameter:
+            return self.request('GET', api_path + str(group_id))
+        elif parameter in ['name', 'lights']:
+            return self.request('GET', api_path + str(group_id))[parameter]
         else:
-            return self.request('GET', '/api/' + self.username + '/groups/' + str(group_id))['action'][parameter]
+            return self.request('GET', api_path + str(group_id))['action'][parameter]
 
     def set_group(self, group_id, parameter, value=None, transitiontime=None):
         """ Change light settings for a group
@@ -730,51 +695,40 @@ class Bridge(object):
         value: string, or list of light IDs if you're setting the lights
 
         """
-
         if isinstance(parameter, dict):
             data = parameter
-        elif parameter == 'lights' and (isinstance(value, list) or isinstance(value, int)):
+        elif parameter == 'lights' and isinstance(value, (int, list)):
             if isinstance(value, int):
                 value = [value]
             data = {parameter: [str(x) for x in value]}
         else:
             data = {parameter: value}
 
-        if transitiontime is not None:
-            data['transitiontime'] = int(round(
-                transitiontime))  # must be int for request format
+        if transitiontime:  # must be int for request format
+            data['transitiontime'] = int(round(transitiontime))  
 
         group_id_array = group_id
-        if PY3K:
-            if isinstance(group_id, int) or isinstance(group_id, str):
-                group_id_array = [group_id]
-        else:
-            if isinstance(group_id, int) or isinstance(group_id, str) or isinstance(group_id, unicode):
-                group_id_array = [group_id]
+        if isinstance(group_id, (int, str, unicode)):
+            group_id_array = [group_id]
         result = []
         for group in group_id_array:
             logger.debug(str(data))
-            if PY3K:
-                if isinstance(group, str):
-                    converted_group = self.get_group_id_by_name(group)
-                else:
-                    converted_group = group
+            if isinstance(group, (str, unicode)):
+                converted_group = self.get_group_id_by_name(group)
             else:
-                if isinstance(group, str) or isinstance(group, unicode):
-                        converted_group = self.get_group_id_by_name(group)
-                else:
-                    converted_group = group
+                converted_group = group
             if converted_group is False:
                 logger.error('Group name does not exit')
                 return
-            if parameter == 'name' or parameter == 'lights':
-                result.append(self.request('PUT', '/api/' + self.username + '/groups/' + str(converted_group), json.dumps(data))) 
+            api_path = '/api/{}/groups/{}'.format(self.username, converted_group)
+            if parameter in ['name', 'lights']:
+                result.append(self.request('PUT', api_path, json.dumps(data))) 
             else:
-                result.append(self.request('PUT', '/api/' + self.username + '/groups/' + str(converted_group) + '/action', json.dumps(data)))
+                result.append(self.request('PUT', api_path + '/action', json.dumps(data)))
         
         if 'error' in list(result[-1][0].keys()):
-            logger.warn("ERROR: {0} for group {1}".format(
-                result[-1][0]['error']['description'], group))
+            fmt = "ERROR: {} for group {}"
+            logger.warn(fmt.format(result[-1][0]['error']['description'], group))
 
         logger.debug(result)
         return result
@@ -790,20 +744,24 @@ class Bridge(object):
             List of lights to be in the group.
 
         """
+        api_path = '/api/{}/groups/'.format(self.username)
         data = {'lights': [str(x) for x in lights], 'name': name}
-        return self.request('POST', '/api/' + self.username + '/groups/', json.dumps(data))
+        return self.request('POST', api_path, json.dumps(data))
 
     def delete_group(self, group_id):
-        return self.request('DELETE', '/api/' + self.username + '/groups/' + str(group_id))
+        api_path = '/api/{}/groups/{}'.format(self.username, group_id)
+        return self.request('DELETE', api_path)
 
     # Schedules #####
     def get_schedule(self, schedule_id=None, parameter=None):
-        if schedule_id is None:
-            return self.request('GET', '/api/' + self.username + '/schedules')
-        if parameter is None:
-            return self.request('GET', '/api/' + self.username + '/schedules/' + str(schedule_id))
+        api_path = '/api/{}/schedules'.format(self.username)
+        if not schedule_id:
+            return self.request('GET', api_path)
+        elif not parameter:
+            return self.request('GET', api_path + str(schedule_id))
 
     def create_schedule(self, name, time, light_id, data, description=' '):
+        api_path = '/api/{}/lights/{}/state'.format(self.username, light_id)
         schedule = {
             'name': name,
             'time': time,
@@ -811,14 +769,15 @@ class Bridge(object):
             'command':
             {
             'method': 'PUT',
-            'address': '/api/' + self.username +
-                '/lights/' + str(light_id) + '/state',
+            'address': api_path,
             'body': data
             }
         }
-        return self.request('POST', '/api/' + self.username + '/schedules', json.dumps(schedule))
+        api_path = '/api/{}/schedules'.format(self.username)
+        return self.request('POST', api_path, json.dumps(schedule))
 
     def create_group_schedule(self, name, time, group_id, data, description=' '):
+        api_path = '/api/{}/groups/{}/action'.format(self.username, group_id)
         schedule = {
             'name': name,
             'time': time,
@@ -826,15 +785,16 @@ class Bridge(object):
             'command':
             {
             'method': 'PUT',
-            'address': '/api/' + self.username +
-                '/groups/' + str(group_id) + '/action',
+            'address': api_path,
             'body': data
             }
         }
-        return self.request('POST', '/api/' + self.username + '/schedules', json.dumps(schedule))
+        api_path = '/api/{}/schedules'.format(self.username)
+        return self.request('POST', api_path, json.dumps(schedule))
 
     def delete_schedule(self, schedule_id):
-        return self.request('DELETE', '/api/' + self.username + '/schedules/' + str(schedule_id))
+        api_path = '/api/{}/schedules/{}'.format(self.username, schedule_id)
+        return self.request('DELETE', api_path)
 
 if __name__ == '__main__':
     import argparse
