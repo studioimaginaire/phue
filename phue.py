@@ -758,7 +758,7 @@ class Bridge(object):
         if not schedule_id:
             return self.request('GET', api_path)
         elif not parameter:
-            return self.request('GET', api_path + str(schedule_id))
+            return self.request('GET', api_path + '/{}'.format(schedule_id))
 
     def create_schedule(self, name, time, light_id, data, description=' '):
         api_path = '/api/{}/lights/{}/state'.format(self.username, light_id)
