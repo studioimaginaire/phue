@@ -22,7 +22,7 @@ import sys
 import socket
 
 PY3K = sys.version_info[0] > 2
-str_or_unicode = (str, ) if PY3K else (str, unicode)  # comma is required!
+str_or_unicode = (str, ) if PY3K else (str, unicode)  # both commas are required!
 
 try:
     import http.client as httplib  # Python3
