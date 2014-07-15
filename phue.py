@@ -22,6 +22,7 @@ import sys
 import socket
 
 PY3K = sys.version_info[0] > 2
+str_or_unicode = (str, ) if PY3K else (str, unicode)  # comma is required!
 
 try:
     import http.client as httplib  # Python3
@@ -596,7 +597,7 @@ class Bridge(object):
 
     def get_light(self, light_id=None, parameter=None):
         """ Gets state by light_id and parameter"""
-        if isinstance(light_id, (str, unicode)):
+        if isinstance(light_id, str_or_unicode):
             light_id = self.get_light_id_by_name(light_id)
         if not light_id:
             return self.request('GET', '/api/' + self.username + '/lights/')
@@ -631,7 +632,7 @@ class Bridge(object):
             data['transitiontime'] = int(round(transitiontime))
 
         light_id_array = light_id
-        if isinstance(light_id, (int, str, unicode)):
+        if isinstance(light_id, (int, str_or_unicode)):
             light_id_array = [light_id]
         result = []
         for light in light_id_array:
@@ -640,7 +641,7 @@ class Bridge(object):
                 api_path = '/api/{}/lights/{}'.format(self.username, light_id)
                 result.append(self.request('PUT', api_path, json.dumps(data)))
             else:
-                if isinstance(light, (str, unicode)):
+                if isinstance(light, str_or_unicode):
                     converted_light = self.get_light_id_by_name(light)
                 else:
                     converted_light = light
@@ -672,7 +673,7 @@ class Bridge(object):
         return False
 
     def get_group(self, group_id=None, parameter=None):
-        if isinstance(group_id, (str, unicode)):
+        if isinstance(group_id, str_or_unicode):
             group_id = self.get_group_id_by_name(group_id)
         if group_id is False:
             logger.error('Group name does not exit')
@@ -708,12 +709,12 @@ class Bridge(object):
             data['transitiontime'] = int(round(transitiontime))  
 
         group_id_array = group_id
-        if isinstance(group_id, (int, str, unicode)):
+        if isinstance(group_id, (int, str_or_unicode)):
             group_id_array = [group_id]
         result = []
         for group in group_id_array:
             logger.debug(str(data))
-            if isinstance(group, (str, unicode)):
+            if isinstance(group, str_or_unicode):
                 converted_group = self.get_group_id_by_name(group)
             else:
                 converted_group = group
