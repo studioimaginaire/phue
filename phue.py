@@ -292,7 +292,7 @@ class Group(Light):
         try:
             self.group_id = int(group_id)
         except:
-            name = group_id if PY3K else unicode(name, encoding='utf-8')
+            name = group_id if PY3K else unicode(group_id, encoding='utf-8')
             groups = bridge.get_group()
             for idnumber, info in groups.items():
                 if info['name'] == name:
