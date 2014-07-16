@@ -89,8 +89,9 @@ class Light(object):
 
         if self.transitiontime:
             kwargs['transitiontime'] = self.transitiontime
-            logger.debug("Setting with transitiontime = {0} ds = {1} s".format(
-                self.transitiontime, float(self.transitiontime) / 10))
+            fmt = "Setting with transitiontime = {} ds = {} s"
+            logger.debug(fmt.format(self.transitiontime,
+                                    float(self.transitiontime) / 10))
 
             if args[0] == 'on' and not args[1]:
                 self._reset_bri_after_on = True
@@ -110,8 +111,8 @@ class Light(object):
         self._name = value
         self._set('name', self._name)
 
-        logger.debug("Renaming light from '{0}' to '{1}'".format(
-            old_name, value))
+        fmt = "Renaming light from '{}' to '{}'"
+        logger.debug(fmt.format(old_name, value))
 
         self.bridge.lights_by_name[self.name] = self
         del self.bridge.lights_by_name[old_name]
@@ -125,8 +126,8 @@ class Light(object):
     @on.setter
     def on(self, value):
 
-        # Some added code here to work around known bug where
-        # turning off with transitiontime set makes it restart on brightness = 1
+        # Some added code here to work around known bug where turning off 
+        # with transitiontime set makes it restart on brightness = 1
         # see
         # http://www.everyhue.com/vanilla/discussion/204/bug-with-brightness-when-requesting-ontrue-transitiontime5
 
@@ -241,7 +242,7 @@ class Light(object):
             value = 2000
 
         colortemp_mireds = int(round(1e6 / value))
-        logger.debug("{0:d} K is {1} mireds".format(value, colortemp_mireds))
+        logger.debug("{:d} K is {} mireds".format(value, colortemp_mireds))
         self.colortemp = colortemp_mireds
     
     @property
@@ -310,8 +311,9 @@ class Group(Light):
         # transition time...
         if self.transitiontime:
             kwargs['transitiontime'] = self.transitiontime
-            logger.debug("Setting with transitiontime = {0} ds = {1} s".format(
-                self.transitiontime, float(self.transitiontime) / 10))
+            fmt = "Setting with transitiontime = {} ds = {} s"
+            logger.debug(fmt.format(self.transitiontime,
+                                    float(self.transitiontime) / 10))
 
             if args[0] == 'on' and not args[1]:
                 self._reset_bri_after_on = True
@@ -329,22 +331,22 @@ class Group(Light):
     def name(self, value):
         old_name = self.name
         self._name = value
-        logger.debug("Renaming light group from '{0}' to '{1}'".format(
-            old_name, value))
+        fmt = "Renaming light group from '{}' to '{}'"
+        logger.debug(fmt.format(old_name, value))
         self._set('name', self._name)
 
     @property
     def lights(self):
         """ Return a list of all lights in this group"""
-        # response = self.bridge.request('GET', '/api/{0}/groups/{1}'.format(self.bridge.username, self.group_id))
+        # response = self.bridge.request('GET', '/api/{}/groups/{}'.format(self.bridge.username, self.group_id))
         # return [Light(self.bridge, int(l)) for l in response['lights']]
         return [Light(self.bridge, int(l)) for l in self._get('lights')]
 
     @lights.setter
     def lights(self, value):
         """ Change the lights that are in this group"""
-        logger.debug("Setting lights in group {0} to {1}".format(
-            self.group_id, str(value)))
+        fmt = "Setting lights in group {} to {}"
+        logger.debug(fmt.format(self.group_id, value))
         self._set('lights', value)
 
 
@@ -396,13 +398,13 @@ class Bridge(object):
 
         """
 
+        user_home_dir = os.getenv(USER_HOME)
         if config_file_path:
             self.config_file_path = config_file_path
-        elif (os.getenv(USER_HOME)
-          and os.access(os.getenv(USER_HOME), os.W_OK)):
-            self.config_file_path = os.path.join(os.getenv(USER_HOME), '.python_hue')
+        elif (user_home_dir and os.access(user_home_dir, os.W_OK)):
+            self.config_file_path = os.path.join(user_home_dir, '.python_hue')
         elif self.platform_is_iOS():
-            self.config_file_path = os.path.join(os.getenv(USER_HOME), 'Documents', '.python_hue') 
+            self.config_file_path = os.path.join(user_home_dir, 'Documents', '.python_hue') 
         else:
             self.config_file_path = os.path.join(os.getcwd(), '.python_hue')
 
@@ -460,7 +462,8 @@ class Bridge(object):
             logger.debug("{} {} {}".format(mode, address, str(data)))
 
         except socket.timeout:
-            error = "{} Request to {}{} timed out.".format(mode, self.ip, address)
+            fmt = "{} Request to {}{} timed out."
+            error = fmt.format(mode, self.ip, address)
             logger.exception(error)
             raise PhueRequestTimeout(None, error)
 
@@ -511,19 +514,18 @@ class Bridge(object):
             for key in line:
                 if 'success' in key:
                     with open(self.config_file_path, 'w') as f:
-                        logger.info(
-                            'Writing configuration file to ' + self.config_file_path)
+                        msg = 'Writing configuration file to '
+                        logger.info(msg + self.config_file_path)
                         f.write(json.dumps({self.ip: line['success']}))
                         logger.info('Reconnecting to the bridge')
                     self.connect()
                 if 'error' in key:
                     error_type = line['error']['type']
                     if error_type == 101:
-                        raise PhueRegistrationException(error_type,
-                                                        'The link button has not been pressed in the last 30 seconds.')
+                        msg = 'The link button has not been pressed in the last 30 seconds.'
+                        raise PhueRegistrationException(error_type, msg)
                     elif error_type == 7:
-                        raise PhueException(error_type,
-                                            'Unknown username')
+                        raise PhueException(error_type, 'Unknown username')
 
     def connect(self):
         """ Connect to the Hue bridge """
@@ -580,7 +582,8 @@ class Bridge(object):
         elif mode == 'name':
             return self.lights_by_name
         elif mode == 'list':
-            return [self.lights_by_id[x] for x in range(1, len(self.lights_by_id) + 1)]
+            return [self.lights_by_id[x]
+                    for x in range(1, len(self.lights_by_id) + 1)]
 
     def __getitem__(self, key):
         """ Lights are accessibly by indexing the bridge either with
@@ -660,8 +663,8 @@ class Bridge(object):
                 api_path = self.get_api_path('lights', converted_light, 'state')
                 result.append(self.request('PUT', api_path, json.dumps(data)))
             if 'error' in result[-1][0]:
-                fmt = "ERROR: {} for light {}"
-                logger.warn(fmt.format(result[-1][0]['error']['description'], light))
+                err_desc = result[-1][0]['error']['description']
+                logger.warn("ERROR: {} for light {}".format(err_desc, light))
         logger.debug(result)
         return result
 
@@ -736,8 +739,8 @@ class Bridge(object):
             result.append(self.request('PUT', api_path, json.dumps(data)))
         
         if 'error' in result[-1][0]:
-            fmt = "ERROR: {} for group {}"
-            logger.warn(fmt.format(result[-1][0]['error']['description'], group))
+            err_desc = result[-1][0]['error']['description']
+            logger.warn("ERROR: {} for group {}".format(err_desc, group))
 
         logger.debug(result)
         return result
@@ -753,8 +756,8 @@ class Bridge(object):
             List of lights to be in the group.
 
         """
-        data = {'lights': [str(x) for x in lights], 'name': name}
-        return self.request('POST', self.get_api_path('groups/'), json.dumps(data))
+        data = json.dumps({'lights': [str(x) for x in lights], 'name': name})
+        return self.request('POST', self.get_api_path('groups/'), data)
 
     def delete_group(self, group_id):
         return self.request('DELETE', self.get_api_path('groups', group_id))
@@ -778,7 +781,8 @@ class Bridge(object):
             'body': data
             }
         }
-        return self.request('POST', self.get_api_path('schedules'), json.dumps(schedule))
+        api_path = self.get_api_path('schedules')
+        return self.request('POST', api_path, json.dumps(schedule))
 
     def create_group_schedule(self, name, time, group_id, data, description=' '):
         schedule = {
@@ -792,10 +796,12 @@ class Bridge(object):
             'body': data
             }
         }
-        return self.request('POST', self.get_api_path('schedules'), json.dumps(schedule))
+        api_path = self.get_api_path('schedules')
+        return self.request('POST', api_path, json.dumps(schedule))
 
     def delete_schedule(self, schedule_id):
-        return self.request('DELETE', self.get_api_path('schedules', schedule_id))
+        api_path = self.get_api_path('schedules', schedule_id)
+        return self.request('DELETE', api_path)
 
 if __name__ == '__main__':
     import argparse
@@ -812,7 +818,8 @@ if __name__ == '__main__':
             b = Bridge(args.host, config_file_path=args.config_file_path)
             break
         except PhueRegistrationException as e:
+            msg = 'Press button on Bridge then hit Enter to try again'
             if PY3K:
-                input('Press button on Bridge then hit Enter to try again')
+                input(msg)
             else:    
-                raw_input('Press button on Bridge then hit Enter to try again')
+                raw_input(msg)
