@@ -100,7 +100,8 @@ class Light(object):
             logger.debug("Setting with transitiontime = {0} ds = {1} s".format(
                 self.transitiontime, float(self.transitiontime) / 10))
 
-            if args[0] == 'on' and args[1] is False:
+            if (args[0] == 'on' and args[1] is False) or (
+                    kwargs.get('on', True) is False):
                 self._reset_bri_after_on = True
         return self.bridge.set_light(self.light_id, *args, **kwargs)
 
@@ -328,7 +329,8 @@ class Group(Light):
             logger.debug("Setting with transitiontime = {0} ds = {1} s".format(
                 self.transitiontime, float(self.transitiontime) / 10))
 
-            if args[0] == 'on' and args[1] is False:
+            if (args[0] == 'on' and args[1] is False) or (
+                    kwargs.get('on', True) is False):
                 self._reset_bri_after_on = True
         return self.bridge.set_group(self.group_id, *args, **kwargs)
 
