@@ -38,7 +38,7 @@ if platform.system() == 'Windows':
 else:
     USER_HOME = 'HOME'
 
-__version__ = '0.8'
+__version__ = '0.9'
 
 
 class PhueException(Exception):
