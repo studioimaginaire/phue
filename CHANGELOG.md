@@ -1,5 +1,12 @@
 #phue changelog
 
+##r8
+* iOS compatibility (Nathanaël Lécaudé)
+* Logging fixes
+* Added effect changing options (bradykent)
+* Several unicode fixes (Nathanaël Lécaudé)
+* Misc bug fixes
+
 ##r7
 * Added to pypi
 * Added support for Python 3 (Nathanaël Lécaudé)
