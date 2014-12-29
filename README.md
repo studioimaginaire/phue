@@ -251,9 +251,7 @@ Huge thanks to http://rsmck.co.uk/hue for hacking the protocol !
 
 ##License
 
-WTFPL - http://www.wtfpl.net
-
-<a href="http://www.wtfpl.net/"><img src="http://www.wtfpl.net/wp-content/uploads/2012/12/wtfpl-badge-4.png" width="80" height="15" alt="WTFPL" /></a>
+MIT - http://opensource.org/licenses/MIT
 
 "Hue Personal Wireless Lighting" is a trademark owned by Koninklijke Philips Electronics N.V., see www.meethue.com for more information.
 I am in no way affiliated with the Philips organization.
