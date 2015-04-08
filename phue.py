@@ -79,6 +79,8 @@ class Light(object):
         self._alert = None
         self.transitiontime = None  # default
         self._reset_bri_after_on = None
+        self._reachable = None
+        self._type = None
 
     def __repr__(self):
         # like default python repr function, but add light name
@@ -277,6 +279,18 @@ class Light(object):
             value = 'none'
         self._alert = value
         self._set('alert', self._alert)
+
+    @property
+    def reachable(self):
+        '''Get the reachable state of the light [boolean]'''
+        self._type = self._get('reachable')
+        return self._type
+
+    @property
+    def type(self):
+        '''Get the type of the light [string]'''
+        self._type = self._get('type')
+        return self._type
 
 
 class Group(Light):
@@ -632,7 +646,12 @@ class Bridge(object):
         if parameter == 'name':
             return state[parameter]
         else:
-            return state['state'][parameter]
+            try:
+                return state['state'][parameter]
+            except KeyError as e:
+                raise KeyError(
+                    'Not a valid key, parameter %s is not associated with light %s)'
+                    % (parameter, light_id))
 
     def set_light(self, light_id, parameter, value=None, transitiontime=None):
         """ Adjust properties of one or more lights.
