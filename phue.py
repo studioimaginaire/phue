@@ -599,7 +599,7 @@ class Bridge(object):
         if mode == 'name':
             return self.lights_by_name
         if mode == 'list':
-            return [self.lights_by_id[x] for x in range(1, len(self.lights_by_id) + 1)]
+            return self.lights_by_id.values()
 
     def __getitem__(self, key):
         """ Lights are accessibly by indexing the bridge either with
