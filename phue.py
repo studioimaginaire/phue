@@ -255,18 +255,18 @@ class Light(object):
         colortemp_mireds = int(round(1e6 / value))
         logger.debug("{0:d} K is {1} mireds".format(value, colortemp_mireds))
         self.colortemp = colortemp_mireds
-    
+
     @property
     def effect(self):
         '''Check the effect setting of the light. [none|colorloop]'''
         self._effect = self._get('effect')
         return self._effect
-    
+
     @effect.setter
     def effect(self, value):
         self._effect = value
         self._set('effect', self._effect)
-    
+
     @property
     def alert(self):
         '''Get or set the alert state of the light [select|lselect|none]'''
@@ -326,7 +326,7 @@ class Group(Light):
                 else:
                     if info['name'] == unicode(name, encoding='utf-8'):
                         self.group_id = int(idnumber)
-                        break  
+                        break
             else:
                 raise LookupError("Could not find a group by that name.")
 
@@ -433,7 +433,7 @@ class Bridge(object):
         elif os.getenv(USER_HOME) is not None and os.access(os.getenv(USER_HOME), os.W_OK):
             self.config_file_path = os.path.join(os.getenv(USER_HOME), '.python_hue')
         elif 'iPad' in platform.machine() or 'iPhone' in platform.machine() or 'iPad' in platform.machine():
-            self.config_file_path = os.path.join(os.getenv(USER_HOME), 'Documents', '.python_hue') 
+            self.config_file_path = os.path.join(os.getenv(USER_HOME), 'Documents', '.python_hue')
         else:
             self.config_file_path = os.path.join(os.getcwd(), '.python_hue')
 
@@ -528,10 +528,14 @@ class Bridge(object):
         for line in response:
             for key in line:
                 if 'success' in key:
-                    with open(self.config_file_path, 'w') as f:
+                    with open(self.config_file_path, 'r+') as f:
+                        config = json.load(f)
+                        config[self.ip] = line['success']
                         logger.info(
                             'Writing configuration file to ' + self.config_file_path)
-                        f.write(json.dumps({self.ip: line['success']}))
+                        f.seek(0)
+                        f.truncate()
+                        f.write(json.dumps(config, indent=2))
                         logger.info('Reconnecting to the bridge')
                     self.connect()
                 if 'error' in key:
@@ -791,10 +795,10 @@ class Bridge(object):
                 logger.error('Group name does not exit')
                 return
             if parameter == 'name' or parameter == 'lights':
-                result.append(self.request('PUT', '/api/' + self.username + '/groups/' + str(converted_group), json.dumps(data))) 
+                result.append(self.request('PUT', '/api/' + self.username + '/groups/' + str(converted_group), json.dumps(data)))
             else:
                 result.append(self.request('PUT', '/api/' + self.username + '/groups/' + str(converted_group) + '/action', json.dumps(data)))
-        
+
         if 'error' in list(result[-1][0].keys()):
             logger.warn("ERROR: {0} for group {1}".format(
                 result[-1][0]['error']['description'], group))
@@ -876,5 +880,5 @@ if __name__ == '__main__':
         except PhueRegistrationException as e:
             if PY3K:
                 input('Press button on Bridge then hit Enter to try again')
-            else:    
+            else:
                 raw_input('Press button on Bridge then hit Enter to try again')
