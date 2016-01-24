@@ -528,7 +528,7 @@ class Bridge(object):
         for line in response:
             for key in line:
                 if 'success' in key:
-                    with open(self.config_file_path, 'r+') as f:
+                    with open(self.config_file_path, 'w') as f:
                         config = json.load(f)
                         config[self.ip] = line['success']
                         logger.info(
