@@ -529,13 +529,9 @@ class Bridge(object):
             for key in line:
                 if 'success' in key:
                     with open(self.config_file_path, 'w') as f:
-                        config = json.load(f)
-                        config[self.ip] = line['success']
                         logger.info(
                             'Writing configuration file to ' + self.config_file_path)
-                        f.seek(0)
-                        f.truncate()
-                        f.write(json.dumps(config, indent=2))
+                        f.write(json.dumps({self.ip: line['success']}))
                         logger.info('Reconnecting to the bridge')
                     self.connect()
                 if 'error' in key:
