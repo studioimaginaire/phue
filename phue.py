@@ -819,6 +819,80 @@ class Bridge(object):
     def delete_group(self, group_id):
         return self.request('DELETE', '/api/' + self.username + '/groups/' + str(group_id))
 
+    # Scenes #####
+    def get_scene(self, scene_id=None):
+        """
+        Get scenes from the hub. Anologus to get_group.
+
+        Parameters
+        ----------
+        scene_id : str
+            The id of the scene. Note that it must be the
+            id, and not the name. Use get_scene_id_from_name
+            to get the id.
+
+            If this is None, all scenes will be returned as
+            a dict of id -> dict.
+
+        Returns
+        -------
+        dict
+
+        """
+        if scene_id is None:
+            return self.request('GET', '/api/' + self.username + '/scenes')
+        else:
+            return self.request('GET', '/api/' + self.username + '/scenes/' + str(scene_id))
+
+    def get_scene_id_from_name(self, name, case_sensitive=True):
+        """
+
+        Parameters
+        ----------
+        name : str or unicode
+        case_sensitive : bool
+
+        Returns
+        -------
+        str
+            The id of the scene corresponding to name,
+            or None if it was not found.
+
+        """
+        if not isinstance(name, unicode):
+            name = unicode(name, encoding='utf-8')
+
+        if not case_sensitive:
+            name = name.lower()
+
+        scenes = self.get_scene()
+        for scene_id in scenes:
+            current_scene = scenes[scene_id]['name']
+            if not case_sensitive:
+                current_scene = current_scene.lower()
+            if name == current_scene:
+                return scene_id
+
+        # Scene was not found
+        return None
+
+
+    def activate_scene(self, scene_id, group_id=0, transitiontime=0):
+        """
+
+        Parameters
+        ----------
+        scene_id : str
+        group_id : str of int
+        transitiontime : int
+
+        Returns
+        -------
+        list(dict)
+
+        """
+        return self.set_group(group_id=group_id, parameter={'scene' : scene_id}, transitiontime=transitiontime)
+
     # Schedules #####
     def get_schedule(self, schedule_id=None, parameter=None):
         if schedule_id is None:
