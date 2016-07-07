@@ -822,7 +822,7 @@ class Bridge(object):
     # Scenes #####
     def get_scene(self, scene_id=None):
         """
-        Get scenes from the hub. Anologus to get_group.
+        Get scenes from the hub. Analogous to get_group.
 
         Parameters
         ----------
@@ -875,7 +875,6 @@ class Bridge(object):
 
         # Scene was not found
         return None
-
 
     def activate_scene(self, scene_id, group_id=0, transitiontime=0):
         """
