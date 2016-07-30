@@ -417,7 +417,7 @@ class Bridge(object):
 
 
     """
-    def __init__(self, ip=None, username=None, config_file_path=None):
+    def __init__(self, ip, username=None):
         """ Initialization function.
 
         Parameters:
@@ -428,25 +428,11 @@ class Bridge(object):
 
         """
 
-        if config_file_path is not None:
-            self.config_file_path = config_file_path
-        elif os.getenv(USER_HOME) is not None and os.access(os.getenv(USER_HOME), os.W_OK):
-            self.config_file_path = os.path.join(os.getenv(USER_HOME), '.python_hue')
-        elif 'iPad' in platform.machine() or 'iPhone' in platform.machine() or 'iPad' in platform.machine():
-            self.config_file_path = os.path.join(os.getenv(USER_HOME), 'Documents', '.python_hue')
-        else:
-            self.config_file_path = os.path.join(os.getcwd(), '.python_hue')
-
         self.ip = ip
-        self.username = username
+        self.username = username or self.register_app()
         self.lights_by_id = {}
         self.lights_by_name = {}
         self._name = None
-
-        # self.minutes = 600 # these do not seem to be used anywhere?
-        # self.seconds = 10
-
-        self.connect()
 
     @property
     def name(self):
@@ -521,19 +507,14 @@ class Bridge(object):
             return False
 
     def register_app(self):
-        """ Register this computer with the Hue bridge hardware and save the resulting access token """
+        """ Register this computer with the Hue bridge hardware and return the resulting access token """
         registration_request = {"devicetype": "python_hue"}
         data = json.dumps(registration_request)
         response = self.request('POST', '/api', data)
         for line in response:
             for key in line:
                 if 'success' in key:
-                    with open(self.config_file_path, 'w') as f:
-                        logger.info(
-                            'Writing configuration file to ' + self.config_file_path)
-                        f.write(json.dumps({self.ip: line['success']}))
-                        logger.info('Reconnecting to the bridge')
-                    self.connect()
+                    return line['success']['username']
                 if 'error' in key:
                     error_type = line['error']['type']
                     if error_type == 101:
@@ -542,35 +523,6 @@ class Bridge(object):
                     if error_type == 7:
                         raise PhueException(error_type,
                                             'Unknown username')
-
-    def connect(self):
-        """ Connect to the Hue bridge """
-        logger.info('Attempting to connect to the bridge...')
-        # If the ip and username were provided at class init
-        if self.ip is not None and self.username is not None:
-            logger.info('Using ip: ' + self.ip)
-            logger.info('Using username: ' + self.username)
-            return
-
-        if self.ip is None or self.username is None:
-            try:
-                with open(self.config_file_path) as f:
-                    config = json.loads(f.read())
-                    if self.ip is None:
-                        self.ip = list(config.keys())[0]
-                        logger.info('Using ip from config: ' + self.ip)
-                    else:
-                        logger.info('Using ip: ' + self.ip)
-                    if self.username is None:
-                        self.username = config[self.ip]['username']
-                        logger.info(
-                            'Using username from config: ' + self.username)
-                    else:
-                        logger.info('Using username: ' + self.username)
-            except Exception as e:
-                logger.info(
-                    'Error opening config file, will attempt bridge registration')
-                self.register_app()
 
     def get_light_id_by_name(self, name):
         """ Lookup a light id based on string name. Case-sensitive. """
@@ -931,23 +883,3 @@ class Bridge(object):
 
     def delete_schedule(self, schedule_id):
         return self.request('DELETE', '/api/' + self.username + '/schedules/' + str(schedule_id))
-
-if __name__ == '__main__':
-    import argparse
-
-    logging.basicConfig(level=logging.DEBUG)
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--host', required=True)
-    parser.add_argument('--config-file-path', required=False)
-    args = parser.parse_args()
-
-    while True:
-        try:
-            b = Bridge(args.host, config_file_path=args.config_file_path)
-            break
-        except PhueRegistrationException as e:
-            if PY3K:
-                input('Press button on Bridge then hit Enter to try again')
-            else:
-                raw_input('Press button on Bridge then hit Enter to try again')
