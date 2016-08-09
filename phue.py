@@ -289,8 +289,8 @@ class Light(object):
     @property
     def reachable(self):
         '''Get the reachable state of the light [boolean]'''
-        self._type = self._get('reachable')
-        return self._type
+        self._reachable = self._get('reachable')
+        return self._reachable
 
     @property
     def type(self):
