@@ -81,6 +81,12 @@ class Light(object):
         self._reset_bri_after_on = None
         self._reachable = None
         self._type = None
+        self._modelid = None
+        self._uniqueid = None
+        self._manufacturername = None
+        self._luminaireuniqueid = None
+        self._swversion = None
+        self._pointsymbol = None
 
     def __repr__(self):
         # like default python repr function, but add light name
@@ -291,6 +297,42 @@ class Light(object):
         '''Get the type of the light [string]'''
         self._type = self._get('type')
         return self._type
+
+    @property
+    def modelid(self):
+        '''Get the modelid of the light [string]'''
+        self._modelid = self._get('modelid')
+        return self._modelid
+
+    @property
+    def uniqueid(self):
+        '''Get the uniqueid of the light [string]'''
+        self._uniqueid = self._get('uniqueid')
+        return self._uniqueid
+
+    @property
+    def manufacturername(self):
+        '''Get the manufacturername of the light [string]'''
+        self._manufacturername = self._get('manufacturername')
+        return self._manufacturername
+
+    @property
+    def luminaireuniqueid(self):
+        '''Get the luminaireuniqueid of the light [string]'''
+        self._luminaireuniqueid = self._get('luminaireuniqueid')
+        return self._luminaireuniqueid
+
+    @property
+    def swversion(self):
+        '''Get the swversion of the light [string]'''
+        self._swversion = self._get('swversion')
+        return self._swversion
+
+    @property
+    def pointsymbol(self):
+        '''Get the pointsymbol of the light [object]'''
+        self._pointsymbol = self._get('pointsymbol')
+        return self._pointsymbol
 
 
 class Group(Light):
@@ -643,7 +685,7 @@ class Bridge(object):
             'GET', '/api/' + self.username + '/lights/' + str(light_id))
         if parameter is None:
             return state
-        if parameter == 'name':
+        if parameter in ('type','name','modelid','manufacturername','uniqueid','swversion','luminaireuniqueid','pointsymbol'):
             return state[parameter]
         else:
             try:
