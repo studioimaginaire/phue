@@ -534,6 +534,36 @@ class AllLights(Group):
         Group.__init__(self, bridge, 0)
 
 
+class Scene(object):
+    """ Container for Scene """
+
+    def __init__(self, sid, appdata=None, lastupdated=None,
+                 lights=None, locked=False, name="", owner="",
+                 picture="", recycle=False, version=0):
+        self.scene_id = sid
+        self.appdata = appdata or {}
+        self.lastupdated = lastupdated
+        if lights is not None:
+            self.lights = sorted([int(x) for x in lights])
+        else:
+            self.lights = []
+        self.locked = locked
+        self.name = name
+        self.owner = owner
+        self.picture = picture
+        self.recycle = recycle
+        self.version = version
+
+    def __repr__(self):
+        # like default python repr function, but add sensor name
+        return '<{0}.{1} id="{2}" name="{3}" lights={4}>'.format(
+            self.__class__.__module__,
+            self.__class__.__name__,
+            self.scene_id,
+            self.name,
+            self.lights)
+
+
 class Bridge(object):
 
     """ Interface to the Hue ZigBee bridge
@@ -1125,6 +1155,60 @@ class Bridge(object):
 
     def delete_group(self, group_id):
         return self.request('DELETE', '/api/' + self.username + '/groups/' + str(group_id))
+
+    # Scenes #####
+    @property
+    def scenes(self):
+        return [Scene(k, **v) for k, v in self.get_scene().items()]
+
+    def get_scene(self):
+        return self.request('GET', '/api/' + self.username + '/scenes')
+
+    def activate_scene(self, group_id, scene_id):
+        return self.request('PUT', '/api/' + self.username + '/groups/' +
+                            str(group_id) + '/action',
+                            json.dumps({"scene": scene_id}))
+
+    def run_scene(self, group_name, scene_name):
+        """Run a scene by group and scene name.
+
+        As of 1.11 of the Hue API the scenes are accessable in the
+        API. With the gen 2 of the official HUE app everything is
+        organized by room groups.
+
+        This provides a convenience way of activating scenes by group
+        name and scene name. If we find exactly 1 group and 1 scene
+        with the matching names, we run them.
+
+        If we find more than one we run the first scene who has
+        exactly the same lights defined as the group. This is far from
+        perfect, but is convenient for setting lights symbolically (and
+        can be improved later).
+
+        """
+        groups = [x for x in self.groups if x.name == group_name]
+        scenes = [x for x in self.scenes if x.name == scene_name]
+        if len(groups) != 1:
+            logger.warn("run_scene: More than 1 group found by name %s",
+                        group_name)
+            return
+        group = groups[0]
+        if len(scenes) == 0:
+            logger.warn("run_scene: No scene found %s", scene_name)
+            return
+        if len(scenes) == 1:
+            self.activate_scene(group.group_id, scenes[0].scene_id)
+            return
+        # otherwise, lets figure out if one of the named scenes uses
+        # all the lights of the group
+        group_lights = sorted([x.light_id for x in group.lights])
+        for scene in scenes:
+            if group_lights == scene.lights:
+                self.activate_scene(group.group_id, scene.scene_id)
+                return
+        logger.warn("run_scene: did not find a scene: %s "
+                    "that shared lights with group %s",
+                    (scene_name, group))
 
     # Schedules #####
     def get_schedule(self, schedule_id=None, parameter=None):
