@@ -25,9 +25,20 @@ class TestRequest(testtools.TestCase):
             req.return_value = [{'success': {'username': 'fooo'}}]
             bridge = phue.Bridge(ip="10.0.0.0")
             self.assertEqual(bridge.config_file_path, confname)
+
+        # check contents of file
         with open(confname) as f:
             contents = f.read()
             self.assertEqual(contents, '{"10.0.0.0": {"username": "fooo"}}')
+
+        # make sure we can open under a different file
+        bridge2 = phue.Bridge(ip="10.0.0.0")
+        self.assertEqual(bridge2.username, "fooo")
+
+        # and that we can even open without an ip address
+        bridge3 = phue.Bridge()
+        self.assertEqual(bridge3.username, "fooo")
+        self.assertEqual(bridge3.ip, "10.0.0.0")
 
     def test_register_fail(self):
         """Test that registration fails in the expected way for timeout"""
