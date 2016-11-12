@@ -15,6 +15,7 @@ I am in no way affiliated with the Philips organization.
 '''
 
 import json
+import logging
 import os
 import platform
 import sys
@@ -29,7 +30,6 @@ if PY3K:
 else:
     import httplib
 
-import logging
 logger = logging.getLogger('phue')
 
 
@@ -39,6 +39,14 @@ else:
     USER_HOME = 'HOME'
 
 __version__ = '0.9'
+
+
+def is_string(data):
+    """Utility method to see if data is a string."""
+    if PY3K:
+        return isinstance(data, str)
+    else:
+        return isinstance(data, str) or isinstance(data, unicode)  # noqa
 
 
 class PhueException(Exception):
@@ -180,7 +188,7 @@ class Light(object):
     @brightness.setter
     def brightness(self, value):
         self._brightness = value
-        result = self._set('bri', self._brightness)
+        self._set('bri', self._brightness)
 
     @property
     def hue(self):
@@ -292,23 +300,25 @@ class Light(object):
         self._type = self._get('type')
         return self._type
 
-class SensorState(dict):
-  def __init__(self, bridge, sensor_id):
-    self._bridge = bridge
-    self._sensor_id = sensor_id
 
-  def __setitem__(self, key, value):
-    dict.__setitem__(self, key, value)
-    self._bridge.set_sensor_state(self._sensor_id, self)
+class SensorState(dict):
+    def __init__(self, bridge, sensor_id):
+        self._bridge = bridge
+        self._sensor_id = sensor_id
+
+    def __setitem__(self, key, value):
+        dict.__setitem__(self, key, value)
+        self._bridge.set_sensor_state(self._sensor_id, self)
+
 
 class SensorConfig(dict):
-  def __init__(self, bridge, sensor_id):
-    self._bridge = bridge
-    self._sensor_id = sensor_id
+    def __init__(self, bridge, sensor_id):
+        self._bridge = bridge
+        self._sensor_id = sensor_id
 
-  def __setitem__(self, key, value):
-    dict.__setitem__(self, key, value)
-    self._bridge.set_sensor_config(self._sensor_id, self)
+    def __setitem__(self, key, value):
+        dict.__setitem__(self, key, value)
+        self._bridge.set_sensor_config(self._sensor_id, self)
 
 
 class Sensor(object):
@@ -462,7 +472,7 @@ class Group(Light):
                         self.group_id = int(idnumber)
                         break
                 else:
-                    if info['name'] == unicode(name, encoding='utf-8'):
+                    if info['name'] == name.decode('utf-8'):
                         self.group_id = int(idnumber)
                         break
             else:
@@ -750,7 +760,7 @@ class Bridge(object):
                 if name == lights[light_id]['name']:
                     return light_id
             else:
-                if unicode(name, encoding='utf-8') == lights[light_id]['name']:
+                if name.decode('utf-8') == lights[light_id]['name']:
                     return light_id
         return False
 
@@ -771,7 +781,6 @@ class Bridge(object):
         if mode == 'list':
             return self.lights_by_id.values()
 
-
     def get_sensor_id_by_name(self, name):
         """ Lookup a sensor id based on string name. Case-sensitive. """
         sensors = self.get_sensor()
@@ -780,7 +789,7 @@ class Bridge(object):
                 if name == sensors[sensor_id]['name']:
                     return sensor_id
             else:
-                if unicode(name, encoding='utf-8') == sensors[sensor_id]['name']:
+                if name.decode('utf-8') == sensors[sensor_id]['name']:
                     return sensor_id
         return False
 
@@ -801,7 +810,6 @@ class Bridge(object):
         if mode == 'list':
             return self.sensors_by_id.values()
 
-
     def __getitem__(self, key):
         """ Lights are accessibly by indexing the bridge either with
         an integer index or string name. """
@@ -815,7 +823,7 @@ class Bridge(object):
                 if PY3K:
                     return self.lights_by_name[key]
                 else:
-                    return self.lights_by_name[unicode(key, encoding='utf-8')]
+                    return self.lights_by_name[key.decode('utf-8')]
             except:
                 raise KeyError(
                     'Not a valid key (integer index starting with 1, or light name): ' + str(key))
@@ -832,12 +840,8 @@ class Bridge(object):
     def get_light(self, light_id=None, parameter=None):
         """ Gets state by light_id and parameter"""
 
-        if PY3K:
-            if isinstance(light_id, str):
-                light_id = self.get_light_id_by_name(light_id)
-        else:
-            if isinstance(light_id, str) or isinstance(light_id, unicode):
-                light_id = self.get_light_id_by_name(light_id)
+        if is_string(light_id):
+            light_id = self.get_light_id_by_name(light_id)
         if light_id is None:
             return self.request('GET', '/api/' + self.username + '/lights/')
         state = self.request(
@@ -877,12 +881,8 @@ class Bridge(object):
                 transitiontime))  # must be int for request format
 
         light_id_array = light_id
-        if PY3K:
-            if isinstance(light_id, int) or isinstance(light_id, str):
-                light_id_array = [light_id]
-        else:
-            if isinstance(light_id, int) or isinstance(light_id, str) or isinstance(light_id, unicode):
-                light_id_array = [light_id]
+        if isinstance(light_id, int) or is_string(light_id):
+            light_id_array = [light_id]
         result = []
         for light in light_id_array:
             logger.debug(str(data))
@@ -890,16 +890,10 @@ class Bridge(object):
                 result.append(self.request('PUT', '/api/' + self.username + '/lights/' + str(
                     light_id), json.dumps(data)))
             else:
-                if PY3K:
-                    if isinstance(light, str):
-                        converted_light = self.get_light_id_by_name(light)
-                    else:
-                        converted_light = light
+                if is_string(light):
+                    converted_light = self.get_light_id_by_name(light)
                 else:
-                    if isinstance(light, str) or isinstance(light, unicode):
-                            converted_light = self.get_light_id_by_name(light)
-                    else:
-                        converted_light = light
+                    converted_light = light
                 result.append(self.request('PUT', '/api/' + self.username + '/lights/' + str(
                     converted_light) + '/state', json.dumps(data)))
             if 'error' in list(result[-1][0].keys()):
@@ -908,7 +902,6 @@ class Bridge(object):
 
         logger.debug(result)
         return result
-
 
     # Sensors #####
 
@@ -919,14 +912,15 @@ class Bridge(object):
 
     def create_sensor(self, name, modelid, swversion, sensor_type, uniqueid, manufacturername, state={}, config={}, recycle=False):
         """ Create a new sensor in the bridge. Returns (ID,None) of the new sensor or (None,message) if creation failed. """
-        data = { "name": name,
-               "modelid": modelid,
-               "swversion": swversion,
-               "type": sensor_type,
-               "uniqueid": uniqueid,
-               "manufacturername": manufacturername,
-               "recycle": recycle
-             }
+        data = {
+            "name": name,
+            "modelid": modelid,
+            "swversion": swversion,
+            "type": sensor_type,
+            "uniqueid": uniqueid,
+            "manufacturername": manufacturername,
+            "recycle": recycle
+        }
         if (isinstance(state, dict) and state != {}):
             data["state"] = state
 
@@ -941,20 +935,16 @@ class Bridge(object):
             new_sensor = Sensor(self, int(new_id))
             self.sensors_by_id[new_id] = new_sensor
             self.sensors_by_name[name] = new_sensor
-            return new_id,None
+            return new_id, None
         else:
             logger.debug("Failed to create sensor:" + repr(result[0]))
-            return None,result[0]
+            return None, result[0]
 
     def get_sensor(self, sensor_id=None, parameter=None):
         """ Gets state by sensor_id and parameter"""
 
-        if PY3K:
-            if isinstance(sensor_id, str):
-                sensor_id = self.get_sensor_id_by_name(sensor_id)
-        else:
-            if isinstance(sensor_id, str) or isinstance(sensor_id, unicode):
-                sensor_id = self.get_sensor_id_by_name(sensor_id)
+        if is_string(sensor_id):
+            sensor_id = self.get_sensor_id_by_name(sensor_id)
         if sensor_id is None:
             return self.request('GET', '/api/' + self.username + '/sensors/')
         data = self.request(
@@ -1012,10 +1002,9 @@ class Bridge(object):
     def set_sensor_content(self, sensor_id, parameter, value=None, structure="state"):
         """ Adjust the "state" or "config" structures of a sensor
         """
-        if (structure != "state" and
-            structure != "config"):
-          logger.debug("set_sensor_current expects structure 'state' or 'config'.")
-          return False
+        if (structure != "state" and structure != "config"):
+            logger.debug("set_sensor_current expects structure 'state' or 'config'.")
+            return False
 
         if isinstance(parameter, dict):
             data = parameter.copy()
@@ -1059,17 +1048,13 @@ class Bridge(object):
                 if name == groups[group_id]['name']:
                     return group_id
             else:
-                if unicode(name, encoding='utf-8') == groups[group_id]['name']:
+                if name.decode('utf-8') == groups[group_id]['name']:
                     return group_id
         return False
 
     def get_group(self, group_id=None, parameter=None):
-        if PY3K:
-            if isinstance(group_id, str):
-                group_id = self.get_group_id_by_name(group_id)
-        else:
-            if isinstance(group_id, str) or isinstance(group_id, unicode):
-                group_id = self.get_group_id_by_name(group_id)
+        if is_string(group_id):
+            group_id = self.get_group_id_by_name(group_id)
         if group_id is False:
             logger.error('Group name does not exit')
             return
@@ -1105,25 +1090,15 @@ class Bridge(object):
                 transitiontime))  # must be int for request format
 
         group_id_array = group_id
-        if PY3K:
-            if isinstance(group_id, int) or isinstance(group_id, str):
-                group_id_array = [group_id]
-        else:
-            if isinstance(group_id, int) or isinstance(group_id, str) or isinstance(group_id, unicode):
-                group_id_array = [group_id]
+        if isinstance(group_id, int) or is_string(group_id):
+            group_id_array = [group_id]
         result = []
         for group in group_id_array:
             logger.debug(str(data))
-            if PY3K:
-                if isinstance(group, str):
-                    converted_group = self.get_group_id_by_name(group)
-                else:
-                    converted_group = group
+            if is_string(group):
+                converted_group = self.get_group_id_by_name(group)
             else:
-                if isinstance(group, str) or isinstance(group, unicode):
-                        converted_group = self.get_group_id_by_name(group)
-                else:
-                    converted_group = group
+                converted_group = group
             if converted_group is False:
                 logger.error('Group name does not exit')
                 return
@@ -1224,10 +1199,10 @@ class Bridge(object):
             'description': description,
             'command':
             {
-            'method': 'PUT',
-            'address': '/api/' + self.username +
-                '/lights/' + str(light_id) + '/state',
-            'body': data
+                'method': 'PUT',
+                'address': ('/api/' + self.username +
+                            '/lights/' + str(light_id) + '/state'),
+                'body': data
             }
         }
         return self.request('POST', '/api/' + self.username + '/schedules', json.dumps(schedule))
@@ -1239,10 +1214,10 @@ class Bridge(object):
             'description': description,
             'command':
             {
-            'method': 'PUT',
-            'address': '/api/' + self.username +
-                '/groups/' + str(group_id) + '/action',
-            'body': data
+                'method': 'PUT',
+                'address': ('/api/' + self.username +
+                            '/groups/' + str(group_id) + '/action'),
+                'body': data
             }
         }
         return self.request('POST', '/api/' + self.username + '/schedules', json.dumps(schedule))
@@ -1268,4 +1243,4 @@ if __name__ == '__main__':
             if PY3K:
                 input('Press button on Bridge then hit Enter to try again')
             else:
-                raw_input('Press button on Bridge then hit Enter to try again')
+                raw_input('Press button on Bridge then hit Enter to try again')  # noqa
