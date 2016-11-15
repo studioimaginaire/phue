@@ -8,6 +8,8 @@ Full featured Python library to control the Philips Hue lighting system.
 - Support for Lights
 - Support for Groups
 - Support for Schedules
+- Support for Scenes
+- Support for Sensors
 - Compatible with Python 2.6.x and upwards
 - Compatible with Python 3
 - No dependencies
