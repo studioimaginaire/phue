@@ -669,37 +669,6 @@ class Bridge(object):
             logger.debug(result_str)
             return json.loads(result_str)
 
-    def get_ip_address(self, set_result=False):
-
-        """ Get the bridge ip address from the meethue.com nupnp api """
-
-        connection = httplib.HTTPSConnection('www.meethue.com')
-        connection.request('GET', '/api/nupnp')
-
-        logger.info('Connecting to meethue.com/api/nupnp')
-
-        result = connection.getresponse()
-
-        if PY3K:
-            data = json.loads(str(result.read(), encoding='utf-8'))
-        else:
-            result_str = result.read()
-            data = json.loads(result_str)
-
-        """ close connection after read() is done, to prevent issues with read() """
-
-        connection.close()
-
-        ip = str(data[0]['internalipaddress'])
-
-        if ip is not '':
-            if set_result:
-                self.ip = ip
-
-            return ip
-        else:
-            return False
-
     def register_app(self):
         """ Register this computer with the Hue bridge hardware and save the resulting access token """
         registration_request = {"devicetype": "python_hue"}
@@ -1225,15 +1194,171 @@ class Bridge(object):
     def delete_schedule(self, schedule_id):
         return self.request('DELETE', '/api/' + self.username + '/schedules/' + str(schedule_id))
 
+
+class Locator(object):
+    '''Locates bridges on the local network'''
+    @staticmethod
+    def upnp():
+        '''Scan's the network using Simple Service Discovery Protocol (the fastest)
+
+        yields unique ip addresses as discovered
+        '''
+        import struct
+        from io import BytesIO
+        SSDP_MULTICAST_ADDR = '239.255.255.250'
+        SSDP_MULTICAST_PORT = 1900
+
+        if PY3K:
+            from urllib.parse import urlparse
+        else:
+            from urlparse import urlparse  # noqa
+
+        class SSDPResponse(object):
+            class _FakeSocket(BytesIO):
+                def makefile(self, *args, **kw):
+                    return self
+
+            def __init__(self, response):
+                self.orig_response = response
+                if(response[0:13] == 'NOTIFY * HTTP'):
+                    response = response.replace("NOTIFY * HTTP/1.1", "HTTP/1.1 200 OK")
+                self.parsed_response = response
+                r = httplib.HTTPResponse(self._FakeSocket(response))
+                r.begin()
+                self.location = r.getheader("location")
+                self.usn = r.getheader("usn")
+                self.st = r.getheader("st")
+                self.cache = r.getheader("cache-control")
+                if(self.cache):
+                    self.cache = self.cache.split("=")[1]
+                self.nts = r.getheader("nts")
+                if self.nts:
+                    self.st = r.getheader("nt")
+                self.server = r.getheader("server")
+
+            def __hash__(self):
+                return hash(repr(self))
+
+            def __eq__(self, other):
+                return repr(self) == repr(other)
+
+            def __repr__(self):
+                return "<SSDPResponse({location}, {st}, {usn}, {nts})>".format(**self.__dict__)
+
+        def discover(service, timeout=5, retries=1):
+            group = (SSDP_MULTICAST_ADDR, SSDP_MULTICAST_PORT)
+            message = "\r\n".join([
+                'M-SEARCH * HTTP/1.1',
+                'HOST: {0}:{1}',
+                'MAN: "ssdp:discover"',
+                'ST: {st}', 'MX: 3', '', ''])
+
+            orig_timeout = socket.getdefaulttimeout()
+
+            if(timeout):
+                socket.setdefaulttimeout(timeout)
+
+            for _ in range(retries):
+                sock = socket.socket(type=socket.SOCK_DGRAM, proto=socket.IPPROTO_UDP)
+                sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
+                # pack MCAST_GRP correctly
+                mreq = struct.pack('4sl', socket.inet_aton(SSDP_MULTICAST_ADDR), socket.INADDR_ANY)
+                # Request MCAST_GRP
+                sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
+
+                # Bind to all interfaces
+                sock.bind(('0.0.0.0', SSDP_MULTICAST_PORT))
+                sock.sendto(message.format(*group, st=service).encode('utf-8'), group)
+                while True:
+                    try:
+                        data = sock.recv(1024)
+                    except socket.timeout:
+                        break
+                    except GeneratorExit:
+                        break
+
+                    if(data):
+                        try:
+                            response = SSDPResponse(data)
+                            if response.location and (
+                                service == 'ssdp:all' or service == response.st
+                            ):
+                                yield response
+                        except GeneratorExit:
+                            break
+                        except:
+                            # exceptions will occur if we get broacasts like
+                            # M-SEARCH requests from others and not NOTIFY
+                            pass
+
+                sock.close()
+                socket.setdefaulttimeout(orig_timeout)
+
+        responses = set()
+        for response in discover('upnp:rootdevice'):
+            (_, ip, path, _, _, _) = urlparse(response.location)
+            if ip in responses:
+                continue
+            if path != '/description.xml':
+                continue
+            if 'IpBridge' not in response.server:
+                continue
+            responses.add(ip)
+            yield ip
+
+    @staticmethod
+    def nupnp():
+        '''Calls out to Hue's webservice for ip addresses of local bridges
+
+        returns list of ip addresses
+        '''
+
+        connection = httplib.HTTPSConnection('www.meethue.com')
+        connection.request('GET', '/api/nupnp')
+
+        logger.info('Connecting to meethue.com/api/nupnp')
+
+        result = connection.getresponse()
+
+        if PY3K:
+            data = json.loads(str(result.read(), encoding='utf-8'))
+        else:
+            result_str = result.read()
+            data = json.loads(result_str)
+
+        """ close connection after read() is done, to prevent issues with read() """
+
+        connection.close()
+
+        return [
+            record['internalipaddress']
+            for record in data
+            if 'internalipaddress' in record]
+
 if __name__ == '__main__':
     import argparse
 
     logging.basicConfig(level=logging.DEBUG)
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--host', required=True)
+    parser.add_argument('--host', required=False)
     parser.add_argument('--config-file-path', required=False)
     args = parser.parse_args()
+
+    if not args.host:
+        logger.info('Searching the local network using UPnP')
+        for ip in Locator.upnp():
+            args.host = ip
+            break
+        if not args.host:
+            logger.info('UPnP search failed, calling meethue.com')
+            hosts = Locator.nupnp()
+            if hosts:
+                args.host = hosts[0]
+        if not args.host:
+            # call argparse gettext for i18n
+            parser.error(argparse._('argument %s is required') % 'host')
 
     while True:
         try:
