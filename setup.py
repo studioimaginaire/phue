@@ -10,5 +10,10 @@ setup(name='phue',
       license='MIT',
       description='A Philips Hue Python library',
       long_description='A Philips Hue Python library',
-      py_modules=['phue'],
+      packages=['phue'],
+      entry_points={
+          'console_scripts': [
+             'phue = phue.__main__:main'
+          ]
+      }
       )
