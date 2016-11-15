@@ -1,5 +1,12 @@
 #phue changelog
 
+##r9
+* Added unit tests (sdague)
+* Added scene support (sdague)
+* Added sensor support (eldstal)
+* Added reachable and type attributes to the Light object (carlosperate)
+* Changed License to MIT
+
 ##r8
 * iOS compatibility (Nathanaël Lécaudé)
 * Logging fixes
