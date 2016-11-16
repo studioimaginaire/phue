@@ -708,11 +708,8 @@ class Bridge(object):
         for line in response:
             for key in line:
                 if 'success' in key:
-                    with open(self.config_file_path, 'w') as f:
-                        logger.info(
-                            'Writing configuration file to ' + self.config_file_path)
-                        f.write(json.dumps({self.ip: line['success']}))
-                        logger.info('Reconnecting to the bridge')
+                    self.save_config(line['success'])
+                    logger.info('Reconnecting to the bridge')
                     self.connect()
                 if 'error' in key:
                     error_type = line['error']['type']
@@ -732,25 +729,36 @@ class Bridge(object):
             logger.info('Using username: ' + self.username)
             return
 
-        if self.ip is None or self.username is None:
-            try:
-                with open(self.config_file_path) as f:
-                    config = json.loads(f.read())
-                    if self.ip is None:
-                        self.ip = list(config.keys())[0]
-                        logger.info('Using ip from config: ' + self.ip)
-                    else:
-                        logger.info('Using ip: ' + self.ip)
-                    if self.username is None:
-                        self.username = config[self.ip]['username']
-                        logger.info(
-                            'Using username from config: ' + self.username)
-                    else:
-                        logger.info('Using username: ' + self.username)
-            except Exception as e:
-                logger.info(
-                    'Error opening config file, will attempt bridge registration')
-                self.register_app()
+        try:
+            self.read_config()
+        except Exception as e:
+            logger.info('Error opening config file, will attempt bridge registration')
+            self.register_app()
+
+    def read_config(self):
+        with open(self.config_file_path) as f:
+            config = json.loads(f.read())
+
+        if self.ip:
+            logger.info('Using ip: %s', self.ip)
+        else:
+            self.ip = list(config.keys())[0]
+            logger.info('Using ip from config: %s', self.ip)
+
+        if self.username:
+            logger.info('Using username: %s', self.username)
+        else:
+            username = config[self.ip]['username']
+            logger.info('Using username from config: %s', username)
+
+    def save_config(self, response):
+        with open(self.config_file_path) as f:
+            config = json.loads(f.read())
+        config[self.ip] = response
+
+        logger.info('Writing configuration file to %s', self.config_file_path)
+        with open(self.config_file_path, 'w') as f:
+            f.write(json.dumps(config))
 
     def get_light_id_by_name(self, name):
         """ Lookup a light id based on string name. Case-sensitive. """
