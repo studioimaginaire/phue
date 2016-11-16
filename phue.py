@@ -752,8 +752,11 @@ class Bridge(object):
             logger.info('Using username from config: %s', self.username)
 
     def save_config(self, response):
-        with open(self.config_file_path) as f:
-            config = json.loads(f.read())
+        try:
+            with open(self.config_file_path) as f:
+                config = json.loads(f.read())
+        except IOError:
+            config = {}
         config[self.ip] = response
 
         logger.info('Writing configuration file to %s', self.config_file_path)
