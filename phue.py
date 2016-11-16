@@ -748,8 +748,8 @@ class Bridge(object):
         if self.username:
             logger.info('Using username: %s', self.username)
         else:
-            username = config[self.ip]['username']
-            logger.info('Using username from config: %s', username)
+            self.username = config[self.ip]['username']
+            logger.info('Using username from config: %s', self.username)
 
     def save_config(self, response):
         with open(self.config_file_path) as f:
