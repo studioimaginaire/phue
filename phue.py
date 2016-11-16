@@ -564,6 +564,17 @@ class Scene(object):
         self.recycle = recycle
         self.version = version
 
+    def for_lights(self, lights):
+        """Is this scene for this list of lights?
+
+        A check that the lights referenced in the scene is a strict
+        subset of the lights listed, so that it will work with the
+        lights in question.
+        """
+        g_lights = set(lights)
+        s_lights = set(self.lights)
+        return s_lights <= g_lights
+
     def __repr__(self):
         # like default python repr function, but add sensor name
         return '<{0}.{1} id="{2}" name="{3}" lights={4}>'.format(
@@ -1162,14 +1173,20 @@ class Bridge(object):
 
         """
         groups = [x for x in self.groups if x.name == group_name]
-        scenes = [x for x in self.scenes if x.name == scene_name]
-        if len(groups) != 1:
+        if len(groups) > 1:
             logger.warn("run_scene: More than 1 group found by name %s",
                         group_name)
             return
+        elif len(groups) < 1:
+            logger.warn("run_scene: No group found by name of '%s'. "
+                        "List of known groups: %s", group_name, self.groups)
         group = groups[0]
+
+        scenes = [x for x in self.scenes if x.name == scene_name]
+
         if len(scenes) == 0:
-            logger.warn("run_scene: No scene found %s", scene_name)
+            logger.warn("run_scene: No scene found with name '%s'. "
+                        "List of known scenes: %s", scene_name, self.scenes)
             return
         if len(scenes) == 1:
             self.activate_scene(group.group_id, scenes[0].scene_id)
@@ -1178,12 +1195,13 @@ class Bridge(object):
         # all the lights of the group
         group_lights = sorted([x.light_id for x in group.lights])
         for scene in scenes:
-            if group_lights == scene.lights:
+            if scene.for_lights(group_lights):
                 self.activate_scene(group.group_id, scene.scene_id)
                 return
         logger.warn("run_scene: did not find a scene: %s "
-                    "that shared lights with group %s",
-                    (scene_name, group))
+                    "that shared lights with group %s. "
+                    "List of known scenes: %s",
+                    scene_name, group, self.scenes)
 
     # Schedules #####
     def get_schedule(self, schedule_id=None, parameter=None):
@@ -1224,6 +1242,7 @@ class Bridge(object):
 
     def delete_schedule(self, schedule_id):
         return self.request('DELETE', '/api/' + self.username + '/schedules/' + str(schedule_id))
+
 
 if __name__ == '__main__':
     import argparse
