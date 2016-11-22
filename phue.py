@@ -527,6 +527,16 @@ class Group(Light):
             self.group_id, str(value)))
         self._set('lights', value)
 
+    # FIXME copy'd from light... shouldn't this work already since subclassing?
+    def __repr__(self):
+        # like default python repr function, but add sensor name
+        return '<{0}.{1} id="{2}" name="{3}" lights={4}>'.format(
+            self.__class__.__module__,
+            self.__class__.__name__,
+            self.group_id,
+            self.name,
+            list((light.light_id for light in self.lights)))
+
 
 class AllLights(Group):
 
