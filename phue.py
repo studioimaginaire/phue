@@ -1195,7 +1195,7 @@ class Bridge(object):
     def create_schedule(self, name, time, light_id, data, description=' '):
         schedule = {
             'name': name,
-            'time': time,
+            'localtime': time,
             'description': description,
             'command':
             {
@@ -1210,7 +1210,7 @@ class Bridge(object):
     def create_group_schedule(self, name, time, group_id, data, description=' '):
         schedule = {
             'name': name,
-            'time': time,
+            'localtime': time,
             'description': description,
             'command':
             {
