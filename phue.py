@@ -537,6 +537,11 @@ class Group(Light):
             self.name,
             list((light.light_id for light in self.lights)))
 
+    @property
+    def scenes(self):
+        light_ids = sorted([x.light_id for x in self.lights])
+        return list(scene for scene in self.bridge.scenes if light_ids == scene.lights)
+
 
 class AllLights(Group):
 
