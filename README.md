@@ -209,7 +209,7 @@ b.delete_group(1)
 
 ###Schedules
 
-You can view, create and delete schedules using the following methods.  Note that the time of the bridge is in UTC so you will need to offset with your timezone.
+You can view, create and delete schedules using the following methods. Note that updates to the Hue API now use local time instead of UTC. If you have issues with schedules not triggering correctly, double check that the time zone is set correctly on your Hue Bridge and that your time in your code is not in UTC by default.
 
 ```python
 
