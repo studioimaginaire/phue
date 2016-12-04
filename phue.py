@@ -38,7 +38,7 @@ if platform.system() == 'Windows':
 else:
     USER_HOME = 'HOME'
 
-__version__ = '1.0'
+__version__ = '1.0.1'
 
 
 def is_string(data):
@@ -1040,16 +1040,21 @@ class Bridge(object):
         """ Access groups as a list """
         return [Group(self, int(groupid)) for groupid in self.get_group().keys()]
 
+    def group(self, group_name=None):
+        if group_name is None:
+            raise PhueException("No group name specified") 
+        return Group(self, self.get_group_id_by_name(group_name))
+
     def get_group_id_by_name(self, name):
         """ Lookup a group id based on string name. Case-sensitive. """
         groups = self.get_group()
         for group_id in groups:
             if PY3K:
                 if name == groups[group_id]['name']:
-                    return group_id
+                    return int(group_id)
             else:
                 if name.decode('utf-8') == groups[group_id]['name']:
-                    return group_id
+                    return int(group_id)
         return False
 
     def get_group(self, group_id=None, parameter=None):
