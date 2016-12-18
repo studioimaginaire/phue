@@ -291,8 +291,8 @@ class Light(object):
     @property
     def reachable(self):
         '''Get the reachable state of the light [boolean]'''
-        self._type = self._get('reachable')
-        return self._type
+        self._reachable = self._get('reachable')
+        return self._reachable
 
     @property
     def type(self):
@@ -848,7 +848,7 @@ class Bridge(object):
             'GET', '/api/' + self.username + '/lights/' + str(light_id))
         if parameter is None:
             return state
-        if parameter == 'name':
+        if parameter in ['name', 'type', 'uniqueid', 'swversion']:
             return state[parameter]
         else:
             try:
