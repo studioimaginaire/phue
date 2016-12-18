@@ -848,7 +848,7 @@ class Bridge(object):
             'GET', '/api/' + self.username + '/lights/' + str(light_id))
         if parameter is None:
             return state
-        if parameter == 'name':
+        if parameter in ['name', 'type', 'uniqueid', 'swversion']:
             return state[parameter]
         else:
             try:
