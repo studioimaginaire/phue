@@ -20,6 +20,7 @@ import os
 import platform
 import sys
 import socket
+import datetime
 if sys.version_info[0] > 2:
     PY3K = True
 else:
@@ -39,6 +40,229 @@ else:
     USER_HOME = 'HOME'
 
 __version__ = '1.0'
+
+
+class HueDateTime(object):
+    '''Represents a date time string sent to and received from a Hue bridge
+
+        >>> dt = HueDateTime('W003/T08:30:00A00:30:00')
+        >>> dt
+        HueDateTime(W003/T08:30:00A00:30:00)
+        >>> dt.sundays
+        True
+        >>> dt.saturdays
+        True
+        >>> dt.mondays
+        False
+        >>> dt.mondays = True
+        >>> dt
+        HueDateTime(W067/T08:30:00A00:30:00)
+        >>> dt.random
+        datetime.time(0, 30)
+        >>> dt.random = None
+        >>> dt
+        HueDateTime(W067/T08:30:00)
+        >>> import datetime
+        >>> dt.date = datetime.date(2017, 1, 1)
+        HueDateTime(2017-01-01T08:30:00)
+        >>> dt.timer = datetime.time(1, 30)
+        >>> dt.recurring = 2
+        >>> dt
+        HueDateTime(R02/PT01:30:00)
+        >>> dt.recurring = True
+        >>> dt
+        HueDateTime(R/PT01:30:00)
+
+    '''
+
+    DATE_FMT = '%Y-%m-%d'
+    TIME_FMT = '%H:%M:%S'
+
+    def __init__(self, string=None):
+        self.random = None
+        self.time = None
+        self.recurring = None
+
+        for key, value in self.parse_string(string).items():
+            setattr(self, key, value)
+
+    def __str__(self):
+        retval = ''
+        if self.recurring and self.time and not self.timer:
+            self.timer, self.time = self.time, None
+
+        if self.recurring is True:
+            retval += 'R/'
+        elif self.recurring:
+            retval += 'R%02d/' % self.recurring
+        elif self.weekly:
+            retval += 'W%03d/' % self._weekly
+        elif self.date:
+            retval += self.date.strftime(self.DATE_FMT)
+
+        if self.time and not self.recurring:
+            retval += 'T' + self.time.strftime(self.TIME_FMT)
+        elif self.timer:
+            retval += 'PT' + self.timer.strftime(self.TIME_FMT)
+
+        if self.random:
+            retval += 'A' + self.random.strftime(self.TIME_FMT)
+
+        return retval
+
+    def __repr__(self):
+        return "HueDateTime({})".format(self)
+
+    def date():
+        def fget(self):
+            try:
+                return self._date
+            except AttributeError:
+                return None
+
+        def fset(self, value):
+            if value:
+                self.recurring = False
+                self.weekly = 0
+                self.timer = None
+            self._date = value
+
+        def fdel(self):
+            del self._date
+
+        return property(**locals())
+    date = date()
+
+    def weekly():
+        def fget(self):
+            try:
+                value = self._weekly
+            except AttributeError:
+                return False
+            else:
+                return value > 0
+
+        def fset(self, value):
+            assert value >= 0 and value < 1 << 7
+            self._weekly = value
+            if value:
+                self.recurring = False
+
+        return property(**locals())
+    weekly = weekly()
+
+    def timer():
+        def fget(self):
+            try:
+                return self._timer
+            except AttributeError:
+                return None
+
+        def fset(self, value):
+            if isinstance(value, datetime.timedelta):
+                value = (datetime.datetime(1970, 1, 1) + value).time()
+
+            if value:
+                self._time = self._date = None
+                self._weekly = 0
+            self._timer = value
+
+        return property(**locals())
+    timer = timer()
+
+    def _weekly_property(constant):
+        def fget(self):
+            try:
+                return self._weekly & constant == constant
+            except AttributeError:
+                return False
+
+        def fset(self, value):
+            try:
+                weekly = self._weekly
+            except AttributeError:
+                weekly = 0
+
+            self.weekly = weekly | constant if value else weekly ^ constant
+
+        # can't **locals() because of constant
+        return property(fget, fset)
+
+    mondays = _weekly_property(1 << 6)
+    tuesdays = _weekly_property(1 << 5)
+    wednesdays = _weekly_property(1 << 4)
+    thursdays = _weekly_property(1 << 3)
+    fridays = _weekly_property(1 << 2)
+    saturdays = _weekly_property(1 << 1)
+    sundays = _weekly_property(1 << 0)
+
+    def to_json(self):
+        return str(self)
+
+    @classmethod
+    def parse_string(cls, string):
+        retval = {}
+        from string import digits
+
+        def read_int(s):
+            out, s = cls._read_to_slash(s)
+            return int(out), s
+
+        def recurring(s):
+            try:
+                return read_int(s)
+            # int('') raises a ValueError
+            except ValueError:
+                return True, s[1:]
+
+        while string:
+            tok = string[0].upper()
+
+            if tok == 'W':
+                key, func = 'weekly', read_int
+            elif tok == 'T':
+                key, func = 'time', cls._read_time
+            elif tok == 'A':
+                key, func = 'random', cls._read_time
+            elif tok == 'R':
+                key, func = 'recurring', recurring
+            elif tok == 'P':
+                tok = string[:2].upper()
+                assert tok == 'PT'
+                key, func = 'timer', cls._read_time
+            elif tok in digits:
+                tok = ''
+                key, func = 'date', cls._read_date
+            else:
+                raise ValueError('Unknown token %s' % tok)
+
+            string = string[len(tok):]
+            value, string = func(string)
+            if value:
+                retval[key] = value
+        return retval
+
+    @classmethod
+    def _read_to_slash(cls, string):
+        idx = string.find('/')
+        if idx >= 0:
+            return string[:idx], string[idx + 1:]
+        return string,
+
+    @classmethod
+    def _read_date(cls, string):
+        date, string = string[:10], string[10:]
+        try:  # official docs has both - and : as a separator
+            date_obj = datetime.datetime.strptime(date, cls.DATE_FMT).date()
+        except ValueError:
+            date_obj = datetime.datetime.strptime(date, '%Y:%m:%d').date()
+        return date_obj, string
+
+    @classmethod
+    def _read_time(cls, string):
+        time, string = string[:8], string[8:]
+        time_obj = datetime.datetime.strptime(time, cls.TIME_FMT).time()
+        return time_obj, string
 
 
 def is_string(data):
@@ -1224,6 +1448,7 @@ class Bridge(object):
 
     def delete_schedule(self, schedule_id):
         return self.request('DELETE', '/api/' + self.username + '/schedules/' + str(schedule_id))
+
 
 if __name__ == '__main__':
     import argparse
