@@ -72,18 +72,25 @@ class HueDateTime(object):
         >>> dt.recurring = True
         >>> dt
         HueDateTime(R/PT01:30:00)
+        >>> dt = HueDateTime(mondays=True, tuesdays=True, wednesdays=True, thursdays=True, fridays=True, time=datetime.time(8, 30), random=datetime.time(0, 15))
+        >>> dt
+        HueDateTime(W124/T08:30:00A00:30:00)
 
     '''
 
     DATE_FMT = '%Y-%m-%d'
     TIME_FMT = '%H:%M:%S'
 
-    def __init__(self, string=None):
+    def __init__(self, *args, **kwargs):
         self.random = None
         self.time = None
         self.recurring = None
 
-        for key, value in self.parse_string(string).items():
+        for string in args:
+            for key, value in self.parse_string(string).items():
+                setattr(self, key, value)
+
+        for key, value in kwargs.items():
             setattr(self, key, value)
 
     def __str__(self):
