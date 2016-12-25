@@ -629,6 +629,22 @@ class Bridge(object):
         self.connect()
 
     @property
+    def api_version(self):
+        try:
+            return self._api_version
+        except AttributeError:
+            pass
+
+        version = self.request('GET', '/api/config')['apiversion']
+        idx = version.find('.')
+        idx = version.find('.', idx)
+        if idx >= 0:
+            version = version[:idx]
+
+        self._api_version = float(version)
+        return self._api_version
+
+    @property
     def name(self):
         '''Get or set the name of the bridge [string]'''
         self._name = self.request(
@@ -764,6 +780,17 @@ class Bridge(object):
                     return light_id
         return False
 
+    def get_light_by_name(self, name):
+        '''Lookup a sensor base on string name. Case-sensitive.
+
+        Only works on bridges with firmware 1.3 or higher.
+        '''
+        name = name.decode('utf-8') if hasattr(name, 'decode') else name
+        lights = self.get_light()
+        for light in lights.values():
+            if name == light['name']:
+                return light
+
     def get_light_objects(self, mode='list'):
         """Returns a collection containing the lights, either by name or id (use 'id' or 'name' as the mode)
         The returned collection can be either a list (default), or a dict.
@@ -841,11 +868,14 @@ class Bridge(object):
         """ Gets state by light_id and parameter"""
 
         if is_string(light_id):
+            if self.api_version >= 1.3:
+                state = self.get_light_by_name(light_id)
             light_id = self.get_light_id_by_name(light_id)
-        if light_id is None:
+        elif light_id is None:
             return self.request('GET', '/api/' + self.username + '/lights/')
-        state = self.request(
-            'GET', '/api/' + self.username + '/lights/' + str(light_id))
+        if not state:
+            state = self.request(
+                'GET', '/api/' + self.username + '/lights/' + str(light_id))
         if parameter is None:
             return state
         if parameter in ['name', 'type', 'uniqueid', 'swversion']:
