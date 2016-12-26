@@ -64,6 +64,7 @@ class HueDateTime(object):
         HueDateTime(W067/T08:30:00)
         >>> import datetime
         >>> dt.date = datetime.date(2017, 1, 1)
+        >>> dt
         HueDateTime(2017-01-01T08:30:00)
         >>> dt.timer = datetime.time(1, 30)
         >>> dt.recurring = 2
@@ -72,9 +73,9 @@ class HueDateTime(object):
         >>> dt.recurring = True
         >>> dt
         HueDateTime(R/PT01:30:00)
-        >>> dt = HueDateTime(mondays=True, tuesdays=True, wednesdays=True, thursdays=True, fridays=True, time=datetime.time(8, 30), random=datetime.time(0, 15))
+        >>> dt = HueDateTime(weekdays=True, time=datetime.time(8, 30), random=datetime.time(0, 15))
         >>> dt
-        HueDateTime(W124/T08:30:00A00:30:00)
+        HueDateTime(W124/T08:30:00A00:15:00)
 
     '''
 
@@ -157,6 +158,27 @@ class HueDateTime(object):
 
         return property(**locals())
     weekly = weekly()
+
+    def weekdays():
+        def fget(self):
+            return (
+                self.mondays and
+                self.tuesdays and
+                self.wednesdays and
+                self.thursdays and
+                self.fridays
+            )
+
+        def fset(self, value):
+            self.mondays = \
+                self.tuesdays = \
+                self.wednesdays = \
+                self.thursdays = \
+                self.fridays = \
+                value
+
+        return property(**locals())
+    weekdays = weekdays()
 
     def timer():
         def fget(self):
