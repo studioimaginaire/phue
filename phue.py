@@ -640,7 +640,7 @@ class Bridge(object):
         self._name = value
         data = {'name': self._name}
         self.request(
-            'PUT', '/api/' + self.username + '/config', json.dumps(data))
+            'PUT', '/api/' + self.username + '/config', data)
 
     def request(self, mode='GET', address=None, data=None):
         """ Utility function for HTTP GET/PUT requests for the API"""
@@ -650,7 +650,7 @@ class Bridge(object):
             if mode == 'GET' or mode == 'DELETE':
                 connection.request(mode, address)
             if mode == 'PUT' or mode == 'POST':
-                connection.request(mode, address, data)
+                connection.request(mode, address, json.dumps(data))
 
             logger.debug("{0} {1} {2}".format(mode, address, str(data)))
 
@@ -703,8 +703,7 @@ class Bridge(object):
     def register_app(self):
         """ Register this computer with the Hue bridge hardware and save the resulting access token """
         registration_request = {"devicetype": "python_hue"}
-        data = json.dumps(registration_request)
-        response = self.request('POST', '/api', data)
+        response = self.request('POST', '/api', registration_request)
         for line in response:
             for key in line:
                 if 'success' in key:
@@ -888,14 +887,14 @@ class Bridge(object):
             logger.debug(str(data))
             if parameter == 'name':
                 result.append(self.request('PUT', '/api/' + self.username + '/lights/' + str(
-                    light_id), json.dumps(data)))
+                    light_id), data))
             else:
                 if is_string(light):
                     converted_light = self.get_light_id_by_name(light)
                 else:
                     converted_light = light
                 result.append(self.request('PUT', '/api/' + self.username + '/lights/' + str(
-                    converted_light) + '/state', json.dumps(data)))
+                    converted_light) + '/state', data))
             if 'error' in list(result[-1][0].keys()):
                 logger.warn("ERROR: {0} for light {1}".format(
                     result[-1][0]['error']['description'], light))
@@ -927,7 +926,7 @@ class Bridge(object):
         if (isinstance(config, dict) and config != {}):
             data["config"] = config
 
-        result = self.request('POST', '/api/' + self.username + '/sensors/', json.dumps(data))
+        result = self.request('POST', '/api/' + self.username + '/sensors/', data)
 
         if ("success" in result[0].keys()):
             new_id = result[0]["success"]["id"]
@@ -973,7 +972,7 @@ class Bridge(object):
         result = None
         logger.debug(str(data))
         result = self.request('PUT', '/api/' + self.username + '/sensors/' + str(
-            sensor_id), json.dumps(data))
+            sensor_id), data)
         if 'error' in list(result[0].keys()):
             logger.warn("ERROR: {0} for sensor {1}".format(
                 result[0]['error']['description'], sensor_id))
@@ -1017,7 +1016,7 @@ class Bridge(object):
         result = None
         logger.debug(str(data))
         result = self.request('PUT', '/api/' + self.username + '/sensors/' + str(
-            sensor_id) + "/" + structure, json.dumps(data))
+            sensor_id) + "/" + structure, data)
         if 'error' in list(result[0].keys()):
             logger.warn("ERROR: {0} for sensor {1}".format(
                 result[0]['error']['description'], sensor_id))
@@ -1103,9 +1102,9 @@ class Bridge(object):
                 logger.error('Group name does not exit')
                 return
             if parameter == 'name' or parameter == 'lights':
-                result.append(self.request('PUT', '/api/' + self.username + '/groups/' + str(converted_group), json.dumps(data)))
+                result.append(self.request('PUT', '/api/' + self.username + '/groups/' + str(converted_group), data))
             else:
-                result.append(self.request('PUT', '/api/' + self.username + '/groups/' + str(converted_group) + '/action', json.dumps(data)))
+                result.append(self.request('PUT', '/api/' + self.username + '/groups/' + str(converted_group) + '/action', data))
 
         if 'error' in list(result[-1][0].keys()):
             logger.warn("ERROR: {0} for group {1}".format(
@@ -1126,7 +1125,7 @@ class Bridge(object):
 
         """
         data = {'lights': [str(x) for x in lights], 'name': name}
-        return self.request('POST', '/api/' + self.username + '/groups/', json.dumps(data))
+        return self.request('POST', '/api/' + self.username + '/groups/', data)
 
     def delete_group(self, group_id):
         return self.request('DELETE', '/api/' + self.username + '/groups/' + str(group_id))
@@ -1142,7 +1141,7 @@ class Bridge(object):
     def activate_scene(self, group_id, scene_id):
         return self.request('PUT', '/api/' + self.username + '/groups/' +
                             str(group_id) + '/action',
-                            json.dumps({"scene": scene_id}))
+                            {"scene": scene_id})
 
     def run_scene(self, group_name, scene_name):
         """Run a scene by group and scene name.
@@ -1205,7 +1204,7 @@ class Bridge(object):
                 'body': data
             }
         }
-        return self.request('POST', '/api/' + self.username + '/schedules', json.dumps(schedule))
+        return self.request('POST', '/api/' + self.username + '/schedules', schedule)
 
     def create_group_schedule(self, name, time, group_id, data, description=' '):
         schedule = {
@@ -1220,7 +1219,7 @@ class Bridge(object):
                 'body': data
             }
         }
-        return self.request('POST', '/api/' + self.username + '/schedules', json.dumps(schedule))
+        return self.request('POST', '/api/' + self.username + '/schedules', schedule)
 
     def delete_schedule(self, schedule_id):
         return self.request('DELETE', '/api/' + self.username + '/schedules/' + str(schedule_id))
