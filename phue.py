@@ -779,7 +779,8 @@ class Bridge(object):
         if mode == 'name':
             return self.lights_by_name
         if mode == 'list':
-            return self.lights_by_id.values()
+            # return ligts in sorted id order, dicts have no natural order
+            return [self.lights_by_id[id] for id in sorted(self.lights_by_id.keys())]
 
     def get_sensor_id_by_name(self, name):
         """ Lookup a sensor id based on string name. Case-sensitive. """
