@@ -595,7 +595,7 @@ class Bridge(object):
 
 
     """
-    def __init__(self, ip=None, username=None, config_file_path=None):
+    def __init__(self, ip=None, username=None, config_file_path=None, port=None):
         """ Initialization function.
 
         Parameters:
@@ -616,6 +616,7 @@ class Bridge(object):
             self.config_file_path = os.path.join(os.getcwd(), '.python_hue')
 
         self.ip = ip
+        self.port = port
         self.username = username
         self.lights_by_id = {}
         self.lights_by_name = {}
@@ -644,7 +645,7 @@ class Bridge(object):
 
     def request(self, mode='GET', address=None, data=None):
         """ Utility function for HTTP GET/PUT requests for the API"""
-        connection = httplib.HTTPConnection(self.ip, timeout=10)
+        connection = httplib.HTTPConnection(self.ip, self.port, timeout=10)
 
         try:
             if mode == 'GET' or mode == 'DELETE':
