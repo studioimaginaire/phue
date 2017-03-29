@@ -1012,7 +1012,8 @@ class Bridge(object):
             data = {parameter: value}
 
         # Attempting to set this causes an error.
-        del data["lastupdated"]
+        if "lastupdated" in data:
+            del data["lastupdated"]
 
         result = None
         logger.debug(str(data))
