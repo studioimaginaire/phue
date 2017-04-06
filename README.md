@@ -1,8 +1,8 @@
-#phue: A Python library for Philips Hue
+# phue: A Python library for Philips Hue
 
 Full featured Python library to control the Philips Hue lighting system.
 
-##Features
+## Features
 
 - Compliant with the Philips Hue API 1.0
 - Support for Lights
@@ -16,9 +16,9 @@ Full featured Python library to control the Philips Hue lighting system.
 - Simple structure, single phue.py file
 - Work in a procedural way or object oriented way
 
-##Installation
+## Installation
 
-###Using distutils
+### Using distutils
 
 ```
 sudo easy_install phue
@@ -28,15 +28,15 @@ or
 pip install phue
 ```
 
-###Manually
+### Manually
 
 phue consists of a single file (phue.py) that you can put in your python search path or in site-packages (or dist-packages depending on the platform)
 You can also simply run it by putting it in the same directory as you main script file or start a python interpreter in the same directory.
 phue works with Python 2.6.x, 2.7.x and 3.x 
 
-##Examples
+## Examples
 
-###Basic usage
+### Basic usage
 
 Using the set_light and get_light methods you can control pretty much all the parameters :
 
@@ -84,7 +84,7 @@ command =  {'transitiontime' : 300, 'on' : True, 'bri' : 254}
 b.set_light(1, command)
 ```
 
-###Light Objects
+### Light Objects
 
 If you want to work in a more object-oriented way, there are several ways you can get Light objects.
 
@@ -134,7 +134,7 @@ for light in lights_list:
 
 ```
 
-###Setting Transition Times
+### Setting Transition Times
 
 In the Hue API, transition times are specified in deciseconds (tenths
 of a second). This
@@ -172,7 +172,7 @@ cases.
 Transition times from 0-300 deciseconds (i.e. 0 - 30 seconds) have
 been tested to work.
 
-###Groups
+### Groups
 
 You can also work with the groups functionality of the Bridge. If groups aren't working, try re-setting the bridge by unpluging it and plugging it back again.
 
@@ -207,7 +207,7 @@ b.delete_group(1)
 
 ```
 
-###Schedules
+### Schedules
 
 You can view, create and delete schedules using the following methods. Note that updates to the Hue API now use local time instead of UTC. If you have issues with schedules not triggering correctly, double check that the time zone is set correctly on your Hue Bridge and that your time in your code is not in UTC by default.
 
@@ -232,13 +232,13 @@ b.delete_schedule(1)
 
 ```
 
-##Using phue with Max/MSP via Jython
+## Using phue with Max/MSP via Jython
 
 You can use the phue library within [Max/MSP](http://www.cycling74.com) by using [Nick Rothwell's](http://www.cassiel.com) Jython objects.  He recently updated the version to support Jython 2.7 which is required for phue to work.
 
 Download it here: https://github.com/cassiel/net.loadbang.jython
 
-##Using phue on iOS via Pythonista
+## Using phue on iOS via Pythonista
 
 You can use phue on your iOS device via the [Pythonista](http://omz-software.com/pythonista) app.
 This is a great way to build quick prototypes on iOS as you don't need to compile anything, you can code directly from the device itself.
@@ -247,11 +247,11 @@ See this little example:
 
 http://www.youtube.com/embed/6K-fxWG6JSs
 
-##Acknowledgments
+## Acknowledgments
 
 Huge thanks to http://rsmck.co.uk/hue for hacking the protocol !
 
-##License
+## License
 
 MIT - http://opensource.org/licenses/MIT
 
