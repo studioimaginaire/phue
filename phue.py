@@ -33,10 +33,11 @@ import logging
 logger = logging.getLogger('phue')
 
 
-if platform.system() == 'Windows':
-    USER_HOME = 'USERPROFILE'
-else:
-    USER_HOME = 'HOME'
+# if platform.system() == 'Windows':
+#     USER_HOME = 'USERPROFILE'
+# else:
+#     USER_HOME = 'HOME'
+USER_HOME = 'HOME'
 
 __version__ = '0.9'
 
