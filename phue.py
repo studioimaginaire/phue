@@ -661,13 +661,13 @@ class Bridge(object):
             raise PhueRequestTimeout(None, error)
 
         result = connection.getresponse()
+        response = result.read()
         connection.close()
         if PY3K:
-            return json.loads(str(result.read(), encoding='utf-8'))
+            return json.loads(response.decode('utf-8'))
         else:
-            result_str = result.read()
-            logger.debug(result_str)
-            return json.loads(result_str)
+            logger.debug(response)
+            return json.loads(response)
 
     def get_ip_address(self, set_result=False):
 
