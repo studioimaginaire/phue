@@ -20,6 +20,7 @@ import os
 import platform
 import sys
 import socket
+import time
 if sys.version_info[0] > 2:
     PY3K = True
 else:
@@ -733,6 +734,8 @@ class Bridge(object):
 
         if self.ip is None or self.username is None:
             try:
+                if (time.time() - os.path.getmtime(self.config_file_path)) / (60*60*24*30) >= 3:
+                    self.register_app()
                 with open(self.config_file_path) as f:
                     config = json.loads(f.read())
                     if self.ip is None:
