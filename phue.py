@@ -1208,6 +1208,13 @@ class Bridge(object):
         }
         return self.request('POST', '/api/' + self.username + '/schedules', schedule)
 
+    def set_schedule_attributes(self, schedule_id, attributes):
+        """
+        :param schedule_id: The ID of the schedule
+        :param attributes: Dictionary with attributes and their new values
+        """
+        return self.request('PUT', '/api/' + self.username + '/schedules/' + str(schedule_id), data=attributes)
+
     def create_group_schedule(self, name, time, group_id, data, description=' '):
         schedule = {
             'name': name,
