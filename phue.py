@@ -1210,8 +1210,8 @@ class Bridge(object):
 
     def set_schedule_attributes(self, schedule_id, attributes):
         """
-        :param schedule_id: 
-        :param attributes: dictionary with attributes and their new values
+        :param schedule_id: The ID of the schedule
+        :param attributes: Dictionary with attributes and their new values
         """
         return self.request('PUT', '/api/' + self.username + '/schedules/' + str(schedule_id), data=attributes)
 
