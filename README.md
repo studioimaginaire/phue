@@ -1,4 +1,4 @@
-# phue: A Python library for Philips Hue
+˜# phue: A Python library for Philips Hue
 
 Full featured Python library to control the Philips Hue lighting system.
 
@@ -32,7 +32,7 @@ pip install phue
 
 phue consists of a single file (phue.py) that you can put in your python search path or in site-packages (or dist-packages depending on the platform)
 You can also simply run it by putting it in the same directory as you main script file or start a python interpreter in the same directory.
-phue works with Python 2.6.x, 2.7.x and 3.x 
+phue works with Python 2.6.x, 2.7.x and 3.x
 
 ## Examples
 
@@ -96,7 +96,7 @@ lights = b.lights
 # Print light names
 for l in lights:
     print(l.name)
-    
+
 # Set brightness of each light to 127
 for l in lights:
     l.brightness = 127
@@ -167,7 +167,7 @@ erratically when the light is turned back on. See [this
 discussion](http://www.everyhue.com/vanilla/discussion/204/bug-with-brightness-when-requesting-ontrue-transitiontime5)
 This package attempts to work around this issue by automatically
 resetting the brightness when necessary, but this may not work in all
-cases. 
+cases.
 
 Transition times from 0-300 deciseconds (i.e. 0 - 30 seconds) have
 been tested to work.
@@ -257,4 +257,3 @@ MIT - http://opensource.org/licenses/MIT
 
 "Hue Personal Wireless Lighting" is a trademark owned by Koninklijke Philips Electronics N.V., see www.meethue.com for more information.
 I am in no way affiliated with the Philips organization.
-
