@@ -1030,7 +1030,7 @@ class Bridge(object):
         try:
             return self.request('DELETE', '/api/' + self.username + '/scenes/' + str(scene_id))
         except:
-            logger.debug("Unable to delete nonexistent scene with ID {0}".format(scene_id))
+            logger.debug("Unable to delete scene with ID {0}".format(scene_id))
 
     def delete_sensor(self, sensor_id):
         try:
