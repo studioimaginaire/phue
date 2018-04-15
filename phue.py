@@ -1167,30 +1167,33 @@ class Bridge(object):
         perfect, but is convenient for setting lights symbolically (and
         can be improved later).
 
+        :returns True if a scene was run, False otherwise
+
         """
         groups = [x for x in self.groups if x.name == group_name]
         scenes = [x for x in self.scenes if x.name == scene_name]
         if len(groups) != 1:
             logger.warn("run_scene: More than 1 group found by name %s",
                         group_name)
-            return
+            return False
         group = groups[0]
         if len(scenes) == 0:
             logger.warn("run_scene: No scene found %s", scene_name)
-            return
+            return False
         if len(scenes) == 1:
             self.activate_scene(group.group_id, scenes[0].scene_id)
-            return
+            return True
         # otherwise, lets figure out if one of the named scenes uses
         # all the lights of the group
         group_lights = sorted([x.light_id for x in group.lights])
         for scene in scenes:
             if group_lights == scene.lights:
                 self.activate_scene(group.group_id, scene.scene_id)
-                return
+                return True
         logger.warn("run_scene: did not find a scene: %s "
                     "that shared lights with group %s",
                     (scene_name, group))
+        return False
 
     # Schedules #####
     def get_schedule(self, schedule_id=None, parameter=None):
