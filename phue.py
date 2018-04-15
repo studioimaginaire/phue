@@ -1173,12 +1173,11 @@ class Bridge(object):
         groups = [x for x in self.groups if x.name == group_name]
         scenes = [x for x in self.scenes if x.name == scene_name]
         if len(groups) != 1:
-            logger.warn("run_scene: More than 1 group found by name %s",
-                        group_name)
+            logger.warn("run_scene: More than 1 group found by name {}".format(group_name))
             return False
         group = groups[0]
         if len(scenes) == 0:
-            logger.warn("run_scene: No scene found %s", scene_name)
+            logger.warn("run_scene: No scene found {}".format(scene_name))
             return False
         if len(scenes) == 1:
             self.activate_scene(group.group_id, scenes[0].scene_id)
