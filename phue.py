@@ -1066,7 +1066,9 @@ class Bridge(object):
             logger.error('Group name does not exit')
             return
         if group_id is None:
-            return self.request('GET', '/api/' + self.username + '/groups/')
+            groups = self.request('GET', '/api/' + self.username + '/groups/')
+            groups['0'] = self.request('GET', '/api/' + self.username + '/groups/0')
+            return groups
         if parameter is None:
             return self.request('GET', '/api/' + self.username + '/groups/' + str(group_id))
         elif parameter == 'name' or parameter == 'lights':
@@ -1172,7 +1174,11 @@ class Bridge(object):
         """
         groups = [x for x in self.groups if x.name == group_name]
         scenes = [x for x in self.scenes if x.name == scene_name]
-        if len(groups) != 1:
+        if len(groups) == 0:
+            logger.warn("run_scene: No groups found by name %s",
+                        group_name)
+            return
+        if len(groups) > 1:
             logger.warn("run_scene: More than 1 group found by name %s",
                         group_name)
             return False
