@@ -672,7 +672,7 @@ class Bridge(object):
 
     def request(self, mode='GET', address=None, data=None):
         """ Utility function for HTTP GET/PUT requests for the API"""
-        if self.token:
+        if hasattr(self, 'token'):
             connection = httplib.HTTPSConnection(self.ip, timeout=20)
             headers = {
                 'Content-Type': 'application/json',
