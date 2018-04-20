@@ -1,10 +1,11 @@
-# phue: A Python library for Philips Hue
+handledautomatically# phue: A Python library for Philips Hue
 
 Full featured Python library to control the Philips Hue lighting system.
 
 ## Features
 
 - Compliant with the Philips Hue API 1.0
+- Support for the Philips Hue Remote API
 - Support for Lights
 - Support for Groups
 - Support for Schedules
@@ -230,6 +231,130 @@ b.create_group_schedule('My schedule', '2012-11-12T22:34:00', 0, data, 'Bedtime'
 # Delete a schedule
 b.delete_schedule(1)
 
+```
+## Using the Remote Hue API
+There are a few steps to complete before you can use the Remote Hue API:
+- Register for a Philips Hue Developer Account
+- Use the Developer Account dashboard to create an 'App'
+- Use the credentials that Philips provide for your 'App' to create a token file that will be used in your code.
+
+##### Register
+The first step is to register for a developer account. Head to https://developers.meethue.com and sign up.
+
+##### Create 'App'
+Once you have registered, you can create an app and obtain your credentials at https://developers.meethue.com/user/me/apps.
+> Note: When you are completing the App creation process, you will be asked to provide a callback URL. You can provide whatever you want for this URL; preferably an address that doesn't exist.
+
+Once you've registered for your developer account and created an app, you will have been provided with a Client ID and a Client Secret (it currently takes Philips about 24 hours to process your request).
+
+##### Create token file
+Now you are ready to create your token file. This is a one off step and once the token is saved you won't need to do this again. The easiest way to create it is to run `phue.py` from a terminal with the `--token` switch. You will be asked to enter your credentials, complete the authorisation in a web browser, and paste the callback URL from your browser once you've finished the authorisation.
+
+Just follow the instructions:
+```
+$ python phue.py --token
+Client ID: <YOUR CLIENT ID>
+Client Secret: <YOUR CLIENT SECRET>
+App ID: <NAME THAT YOU GAVE TO APP>
+Save token to (default: /home/user/.python_hue_token):
+Your web browser should open a Philips Hue page asking you to provide authorisation to access your Philips Hue system.
+Note that you need to sign in with your Philips Hue account, not your developer account.
+If your browser doesn't open, you can manually visit the following address:
+https://api.meethue.com/oauth2/auth?clientid=YOURCLIENTID&appid=YOURAPPNAME&deviceid=phuepy&devicename=phuepy&state=421c8c882b7218898290a135f763b153&response_type=code
+Once you have provided authorisation, you will be redirected to the callback URL that you specified when setting up your developer credentials.
+Please enter the entire address of the page you are sent to after completing authorisation:
+Address: <YOUR CALLBACK URL>/callback?code=FJHGSauGl&state=421c8c882b7218898290a135f763b153
+Saved token to /home/user/.python_hue_token
+```
+You can see that you have to option to specify where to save the token. Just hit enter at the `Save token to:` prompt to accept the default.
+
+
+
+If you don't want to use the terminal, you can also create the token from a python shell:
+```python
+>>> from phue import RemoteToken
+>>> token = RemoteToken(clientid='YOURCLIENTID', clientsecret='YOURCLIENTSECRET', appid='YOURAPPID', saveto='/home/user/.python_hue_token')
+```
+You will then be redirected to the Philips Hue webpage to continue authorisation in the same fashion as above.
+
+##### How to use the token file
+Now that you have remote access token, you can use it to create your Bridge object in your python code:
+```python
+from phue import RemoteBridge
+
+b = RemoteBridge()
+```
+If you chose to save the token file somewhere other than the default location then you will need to provide the path:
+```python
+b = RemoteBridge(token_path='/path/to/token.file')
+```
+
+Once you have your remote bridge object, you can use it just the same as a local bridge. For example:
+```python
+# Prints if light 1 is on or not
+b.get_light(1, 'on')
+```
+### Some notes on the token file
+Obviously, keep it safe. With it, anyone can access your lights.
+
+The Philips Hue remote API uses OAuth2 tokens. This means that the authorisation process actually generates two codes: An access code (used to actually access your lighting system) and a refresh code (used to obtain updated access AND refresh codes). Both these codes expire, but the refresh code is valid for significantly longer than the access code. At the time of writing, access codes are valid for 7 days and refresh codes are valid for 16 weeks, but Philips can change these periods. When the access code expires, the refresh code is used to obtain new codes (both access and refresh). The refresh process is automatically handled, so provided the token is used more frequently than the refresh token validity period (currently 16 weeks) then you should never need to generate a new token. If both codes have expired because the token hasn't been used, then the token becomes useless and you will need to generate new a new token.
+
+You can read more about the token and authentication at https://developers.meethue.com/documentation/remote-api-authentication (a developer account is required to view this page).
+
+#### Interacting with the token
+You shouldn't need to interact with the token as the code refresh process is handled automatically. But if you feel like you want to, or have the need to inspect it closer, then the token is just an attribute of the `RemoteBridge` object (aptly named `token`).
+```python
+>>> b.token
+<phue.RemoteToken object at 0x102caedd0>
+```
+Or you can create an instance of the Token without creating a `RemoteBridge` object:
+```python
+>>> from phue import RemoteToken
+# You need to provide the token file path if you're creating new instance of RemoteToken:
+>>> token = RemoteToken(load='/path/to/token.file')
+>>> token
+<phue.RemoteToken object at 0x1030b45d0>
+```
+##### Useful methods
+```python
+# Does the Access token require refreshing?
+>>> b.token.refresh_required
+False
+
+# When does the Access token expire?
+>>> b.token.access_expires
+'Sun Apr 22 10:35:35 2018'
+
+# When does the refresh token expire?
+>>> b.token.refresh_expires
+'Sun Aug  5 10:35:35 2018'
+
+# Datetime objects of expiry
+>>> b.token.refresh_token_exp
+datetime.datetime(2018, 8, 5, 2, 35, 35, 391951, tzinfo=<phue.UTC object at 0x10307b1d0>)
+>>> b.token.access_token_exp
+datetime.datetime(2018, 4, 22, 2, 35, 35, 378105, tzinfo=<phue.UTC object at 0x10307b1d0>)
+
+# Is the token valid (i.e. has the refresh code not yet expired)?
+>>> b.token.valid
+True
+
+# Refresh the access codes:
+# Returns True if the codes were refreshed and False if they weren't because they are still valid
+>>> b.token.refresh()
+False
+# Force the access codes to be refreshed even if they are currently valid:
+>>> b.token.refresh(force=True)
+True
+
+# Display the actual codes:
+>>> b.token.access_token
+u'ghcgX4uJ3FMdGpBUD7cBGNQV4hVK'
+>>> b.token.refresh_token
+u'WMsPGsx5FsvUwEpjwz94noxdJ7mtxgNK'
+
+# Save to a new or different token file.
+b.token.save()
 ```
 
 ## Using phue with Max/MSP via Jython

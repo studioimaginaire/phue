@@ -14,12 +14,19 @@ I am in no way affiliated with the Philips organization.
 
 '''
 
+import binascii
+import calendar
+import hashlib
 import json
 import logging
 import os
 import platform
+import re
 import sys
 import socket
+import webbrowser
+from copy import deepcopy
+from datetime import datetime, timedelta
 if sys.version_info[0] > 2:
     PY3K = True
 else:
@@ -27,8 +34,28 @@ else:
 
 if PY3K:
     import http.client as httplib
+    from datetime import timezone
+    from urllib.parse import parse_qs, urlparse, urlencode
+    UTC = timezone.utc
 else:
     import httplib
+    from datetime import tzinfo
+    from urllib import urlencode
+    from urlparse import parse_qs, urlparse
+
+    FileNotFoundError = IOError
+
+    class UTC(tzinfo):
+        def utcoffset(self, dt):
+            return timedelta(0)
+
+        def tzname(self, dt):
+            return "UTC"
+
+        def dst(self, dt):
+            return timedelta(0)
+    UTC = UTC()
+    input = raw_input
 
 logger = logging.getLogger('phue')
 
@@ -595,7 +622,7 @@ class Bridge(object):
 
 
     """
-    def __init__(self, ip=None, username=None, config_file_path=None):
+    def __init__(self, ip=None, username=None, config_file_path=None, api='/api/'):
         """ Initialization function.
 
         Parameters:
@@ -622,6 +649,7 @@ class Bridge(object):
         self.sensors_by_id = {}
         self.sensors_by_name = {}
         self._name = None
+        self.api = api
 
         # self.minutes = 600 # these do not seem to be used anywhere?
         # self.seconds = 10
@@ -632,7 +660,7 @@ class Bridge(object):
     def name(self):
         '''Get or set the name of the bridge [string]'''
         self._name = self.request(
-            'GET', '/api/' + self.username + '/config')['name']
+            'GET', self.api + self.username + '/config')['name']
         return self._name
 
     @name.setter
@@ -640,19 +668,28 @@ class Bridge(object):
         self._name = value
         data = {'name': self._name}
         self.request(
-            'PUT', '/api/' + self.username + '/config', data)
+            'PUT', self.api + self.username + '/config', data)
 
     def request(self, mode='GET', address=None, data=None):
         """ Utility function for HTTP GET/PUT requests for the API"""
-        connection = httplib.HTTPConnection(self.ip, timeout=10)
+        if self.token:
+            connection = httplib.HTTPSConnection(self.ip, timeout=20)
+            headers = {
+                'Content-Type': 'application/json',
+                'Authorization': self.token.bearer()
+            }
+        else:
+            connection = httplib.HTTPConnection(self.ip, timeout=10)
+            headers = {}
 
         try:
             if mode == 'GET' or mode == 'DELETE':
-                connection.request(mode, address)
+                connection.request(mode, address, None, headers)
             if mode == 'PUT' or mode == 'POST':
-                connection.request(mode, address, json.dumps(data))
+                connection.request(mode, address, json.dumps(data), headers)
 
-            logger.debug("{0} {1} {2}".format(mode, address, str(data)))
+            logger.debug("{0} {1} {2} {3}".format(mode, address,
+                                                  str(data), str(headers)))
 
         except socket.timeout:
             error = "{} Request to {}{} timed out.".format(mode, self.ip, address)
@@ -703,7 +740,7 @@ class Bridge(object):
     def register_app(self):
         """ Register this computer with the Hue bridge hardware and save the resulting access token """
         registration_request = {"devicetype": "python_hue"}
-        response = self.request('POST', '/api', registration_request)
+        response = self.request('POST', self.api, registration_request)
         for line in response:
             for key in line:
                 if 'success' in key:
@@ -768,7 +805,7 @@ class Bridge(object):
         The returned collection can be either a list (default), or a dict.
         Set mode='id' for a dict by light ID, or mode='name' for a dict by light name.   """
         if self.lights_by_id == {}:
-            lights = self.request('GET', '/api/' + self.username + '/lights/')
+            lights = self.request('GET', self.api + self.username + '/lights/')
             for light in lights:
                 self.lights_by_id[int(light)] = Light(self, int(light))
                 self.lights_by_name[lights[light][
@@ -798,7 +835,7 @@ class Bridge(object):
         The returned collection can be either a list (default), or a dict.
         Set mode='id' for a dict by sensor ID, or mode='name' for a dict by sensor name.   """
         if self.sensors_by_id == {}:
-            sensors = self.request('GET', '/api/' + self.username + '/sensors/')
+            sensors = self.request('GET', self.api + self.username + '/sensors/')
             for sensor in sensors:
                 self.sensors_by_id[int(sensor)] = Sensor(self, int(sensor))
                 self.sensors_by_name[sensors[sensor][
@@ -835,7 +872,7 @@ class Bridge(object):
 
     def get_api(self):
         """ Returns the full api dictionary """
-        return self.request('GET', '/api/' + self.username)
+        return self.request('GET', self.api + self.username)
 
     def get_light(self, light_id=None, parameter=None):
         """ Gets state by light_id and parameter"""
@@ -843,9 +880,9 @@ class Bridge(object):
         if is_string(light_id):
             light_id = self.get_light_id_by_name(light_id)
         if light_id is None:
-            return self.request('GET', '/api/' + self.username + '/lights/')
+            return self.request('GET', self.api + self.username + '/lights/')
         state = self.request(
-            'GET', '/api/' + self.username + '/lights/' + str(light_id))
+            'GET', self.api + self.username + '/lights/' + str(light_id))
         if parameter is None:
             return state
         if parameter in ['name', 'type', 'uniqueid', 'swversion']:
@@ -887,14 +924,14 @@ class Bridge(object):
         for light in light_id_array:
             logger.debug(str(data))
             if parameter == 'name':
-                result.append(self.request('PUT', '/api/' + self.username + '/lights/' + str(
+                result.append(self.request('PUT', self.api + self.username + '/lights/' + str(
                     light_id), data))
             else:
                 if is_string(light):
                     converted_light = self.get_light_id_by_name(light)
                 else:
                     converted_light = light
-                result.append(self.request('PUT', '/api/' + self.username + '/lights/' + str(
+                result.append(self.request('PUT', self.api + self.username + '/lights/' + str(
                     converted_light) + '/state', data))
             if 'error' in list(result[-1][0].keys()):
                 logger.warn("ERROR: {0} for light {1}".format(
@@ -927,7 +964,7 @@ class Bridge(object):
         if (isinstance(config, dict) and config != {}):
             data["config"] = config
 
-        result = self.request('POST', '/api/' + self.username + '/sensors/', data)
+        result = self.request('POST', self.api + self.username + '/sensors/', data)
 
         if ("success" in result[0].keys()):
             new_id = result[0]["success"]["id"]
@@ -946,9 +983,9 @@ class Bridge(object):
         if is_string(sensor_id):
             sensor_id = self.get_sensor_id_by_name(sensor_id)
         if sensor_id is None:
-            return self.request('GET', '/api/' + self.username + '/sensors/')
+            return self.request('GET', self.api + self.username + '/sensors/')
         data = self.request(
-            'GET', '/api/' + self.username + '/sensors/' + str(sensor_id))
+            'GET', self.api + self.username + '/sensors/' + str(sensor_id))
 
         if isinstance(data, list):
             logger.debug("Unable to read sensor with ID {0}: {1}".format(sensor_id, repr(data)))
@@ -972,7 +1009,7 @@ class Bridge(object):
 
         result = None
         logger.debug(str(data))
-        result = self.request('PUT', '/api/' + self.username + '/sensors/' + str(
+        result = self.request('PUT', self.api + self.username + '/sensors/' + str(
             sensor_id), data)
         if 'error' in list(result[0].keys()):
             logger.warn("ERROR: {0} for sensor {1}".format(
@@ -1017,7 +1054,7 @@ class Bridge(object):
 
         result = None
         logger.debug(str(data))
-        result = self.request('PUT', '/api/' + self.username + '/sensors/' + str(
+        result = self.request('PUT', self.api + self.username + '/sensors/' + str(
             sensor_id) + "/" + structure, data)
         if 'error' in list(result[0].keys()):
             logger.warn("ERROR: {0} for sensor {1}".format(
@@ -1028,7 +1065,7 @@ class Bridge(object):
 
     def delete_scene(self, scene_id):
         try:
-            return self.request('DELETE', '/api/' + self.username + '/scenes/' + str(scene_id))
+            return self.request('DELETE', self.api + self.username + '/scenes/' + str(scene_id))
         except:
             logger.debug("Unable to delete scene with ID {0}".format(scene_id))
 
@@ -1037,7 +1074,7 @@ class Bridge(object):
             name = self.sensors_by_id[sensor_id].name
             del self.sensors_by_name[name]
             del self.sensors_by_id[sensor_id]
-            return self.request('DELETE', '/api/' + self.username + '/sensors/' + str(sensor_id))
+            return self.request('DELETE', self.api + self.username + '/sensors/' + str(sensor_id))
         except:
             logger.debug("Unable to delete nonexistent sensor with ID {0}".format(sensor_id))
 
@@ -1066,13 +1103,13 @@ class Bridge(object):
             logger.error('Group name does not exit')
             return
         if group_id is None:
-            return self.request('GET', '/api/' + self.username + '/groups/')
+            return self.request('GET', self.api + self.username + '/groups/')
         if parameter is None:
-            return self.request('GET', '/api/' + self.username + '/groups/' + str(group_id))
+            return self.request('GET', self.api + self.username + '/groups/' + str(group_id))
         elif parameter == 'name' or parameter == 'lights':
-            return self.request('GET', '/api/' + self.username + '/groups/' + str(group_id))[parameter]
+            return self.request('GET', self.api + self.username + '/groups/' + str(group_id))[parameter]
         else:
-            return self.request('GET', '/api/' + self.username + '/groups/' + str(group_id))['action'][parameter]
+            return self.request('GET', self.api + self.username + '/groups/' + str(group_id))['action'][parameter]
 
     def set_group(self, group_id, parameter, value=None, transitiontime=None):
         """ Change light settings for a group
@@ -1110,9 +1147,9 @@ class Bridge(object):
                 logger.error('Group name does not exit')
                 return
             if parameter == 'name' or parameter == 'lights':
-                result.append(self.request('PUT', '/api/' + self.username + '/groups/' + str(converted_group), data))
+                result.append(self.request('PUT', self.api + self.username + '/groups/' + str(converted_group), data))
             else:
-                result.append(self.request('PUT', '/api/' + self.username + '/groups/' + str(converted_group) + '/action', data))
+                result.append(self.request('PUT', self.api + self.username + '/groups/' + str(converted_group) + '/action', data))
 
         if 'error' in list(result[-1][0].keys()):
             logger.warn("ERROR: {0} for group {1}".format(
@@ -1133,10 +1170,10 @@ class Bridge(object):
 
         """
         data = {'lights': [str(x) for x in lights], 'name': name}
-        return self.request('POST', '/api/' + self.username + '/groups/', data)
+        return self.request('POST', self.api + self.username + '/groups/', data)
 
     def delete_group(self, group_id):
-        return self.request('DELETE', '/api/' + self.username + '/groups/' + str(group_id))
+        return self.request('DELETE', self.api + self.username + '/groups/' + str(group_id))
 
     # Scenes #####
     @property
@@ -1144,10 +1181,10 @@ class Bridge(object):
         return [Scene(k, **v) for k, v in self.get_scene().items()]
 
     def get_scene(self):
-        return self.request('GET', '/api/' + self.username + '/scenes')
+        return self.request('GET', self.api + self.username + '/scenes')
 
     def activate_scene(self, group_id, scene_id):
-        return self.request('PUT', '/api/' + self.username + '/groups/' +
+        return self.request('PUT', self.api + self.username + '/groups/' +
                             str(group_id) + '/action',
                             {"scene": scene_id})
 
@@ -1195,9 +1232,9 @@ class Bridge(object):
     # Schedules #####
     def get_schedule(self, schedule_id=None, parameter=None):
         if schedule_id is None:
-            return self.request('GET', '/api/' + self.username + '/schedules')
+            return self.request('GET', self.api + self.username + '/schedules')
         if parameter is None:
-            return self.request('GET', '/api/' + self.username + '/schedules/' + str(schedule_id))
+            return self.request('GET', self.api + self.username + '/schedules/' + str(schedule_id))
 
     def create_schedule(self, name, time, light_id, data, description=' '):
         schedule = {
@@ -1207,19 +1244,19 @@ class Bridge(object):
             'command':
             {
                 'method': 'PUT',
-                'address': ('/api/' + self.username +
+                'address': (self.api + self.username +
                             '/lights/' + str(light_id) + '/state'),
                 'body': data
             }
         }
-        return self.request('POST', '/api/' + self.username + '/schedules', schedule)
+        return self.request('POST', self.api + self.username + '/schedules', schedule)
 
     def set_schedule_attributes(self, schedule_id, attributes):
         """
         :param schedule_id: The ID of the schedule
         :param attributes: Dictionary with attributes and their new values
         """
-        return self.request('PUT', '/api/' + self.username + '/schedules/' + str(schedule_id), data=attributes)
+        return self.request('PUT', self.api + self.username + '/schedules/' + str(schedule_id), data=attributes)
 
     def create_group_schedule(self, name, time, group_id, data, description=' '):
         schedule = {
@@ -1229,15 +1266,451 @@ class Bridge(object):
             'command':
             {
                 'method': 'PUT',
-                'address': ('/api/' + self.username +
+                'address': (self.api + self.username +
                             '/groups/' + str(group_id) + '/action'),
                 'body': data
             }
         }
-        return self.request('POST', '/api/' + self.username + '/schedules', schedule)
+        return self.request('POST', self.api + self.username + '/schedules', schedule)
 
     def delete_schedule(self, schedule_id):
-        return self.request('DELETE', '/api/' + self.username + '/schedules/' + str(schedule_id))
+        return self.request('DELETE', self.api + self.username + '/schedules/' + str(schedule_id))
+
+
+class PhueAuthorisationError(PhueException):
+    pass
+
+
+class PhueTokenExpired(PhueException):
+    pass
+
+
+class PhueInvalidToken(PhueException):
+    pass
+
+
+class RemoteBridge(Bridge):
+
+    def __init__(self, username=None, config_file_path=None, token_path=None):
+        if config_file_path is None:
+            if os.getenv(USER_HOME) is not None and os.access(os.getenv(USER_HOME), os.W_OK):
+                config_file_path = os.path.join(os.getenv(USER_HOME), '.python_hue_remote')
+            elif 'iPad' in platform.machine() or 'iPhone' in platform.machine() or 'iPad' in platform.machine():
+                config_file_path = os.path.join(os.getenv(USER_HOME), 'Documents', '.python_hue_remote')
+            else:
+                config_file_path = os.path.join(os.getcwd(), '.python_hue_remote')
+        self.token = self.get_token(token_path)
+        super(RemoteBridge, self).__init__(
+            ip='api.meethue.com', username=username,
+            config_file_path=config_file_path, api='/bridge/')
+
+    def get_token(self, token_path=None):
+        if token_path is None:
+            if os.getenv(USER_HOME) is not None and os.access(os.getenv(USER_HOME), os.W_OK):
+                token_path = os.path.join(os.getenv(USER_HOME), '.python_hue_token')
+            elif 'iPad' in platform.machine() or 'iPhone' in platform.machine() or 'iPad' in platform.machine():
+                token_path = os.path.join(os.getenv(USER_HOME), 'Documents', '.python_hue_token')
+            else:
+                token_path = os.path.join(os.getcwd(), '.python_hue_token')
+        return RemoteToken(load=token_path)
+
+    def press_link_button(self):
+        logger.info('Pressing remote virtual link button..')
+        data = {'linkbutton': True}
+        connection = httplib.HTTPSConnection(self.ip, timeout=10)
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': self.token.bearer()
+        }
+        connection.request('PUT', '{}{}'.format(self.api, '0/config'),
+                           json.dumps(data), headers)
+        result = connection.getresponse()
+        logger.debug('Response from API: {} {}'.format(
+            result.status, result.reason))
+        if result.status != 200:
+            raise PhueRegistrationException(result.status, result.read())
+
+    def get_ip_address(self, *args, **kwargs):
+        raise NotImplementedError
+
+    def register_app(self, *args, **kwargs):
+        self.press_link_button()
+        super(RemoteBridge, self).register_app(*args, **kwargs)
+
+
+class RemoteToken(object):
+    """ A Python Class to interact with the Philips Hue remote access API to
+    manage the associated OAuth2 tokens.
+
+    You will need to provide your own account credentials from
+    https://developers.meethue.com/user/me/apps
+    """
+
+    API =               'api.meethue.com'
+    ENDPOINT_AUTH =     '/oauth2/auth'
+    ENDPOINT_TOKEN =    '/oauth2/token'
+    ENDPOINT_REFRESH =  '/oauth2/refresh'
+
+    def __init__(self, clientid=None, clientsecret=None, appid=None,
+                 saveto=None, load=None):
+        """ A new token object requires your own credentials from
+        https://developers.meethue.com/user/me/apps
+        You will be required to visit a URL (generated by this object) and
+        paste in the callback URL that is created after authorisation through
+        the web browser is complete. The required information from that URL
+        will be parsed in the `new()` method.
+
+        When registering, you can use what ever you want for the callback URL
+        (it doesn't even need to be a valid URL).
+
+        Args:
+            clientid (str): The clientid you obtain from Hue when registering
+                for the Hue Remote API.
+            clientsecret (str): The clientsecret you have received from Hue
+                when registering for the Hue Remote API.
+            appid (str): The App name you specified when registering for the Hue
+                Remote API.
+            saveto (str optional): The file to save details to so they can be
+                reloaded at a later time.
+            load (str optional): If specified, load token data from the path
+                instead of attempting to autorise a new one. This will override
+                the remaining attributes, as they are filled from the file
+                contents instead.
+        """
+
+        if load:
+            self.load(load)
+        elif (clientid and clientsecret and appid):
+            self.clientid = clientid
+            self.clientsecret = clientsecret
+            self.appid = appid
+            self.saveto = saveto
+            self.__authorize__()
+        else:
+            raise ValueError('Missing required argumets clientid, clientsecret and appid')
+
+    def __authorize__(self):
+        """ Obtains new access and refresh tokens from the Philips Hue API
+
+        This method is intended to be called from the `__init__` method.
+
+        Returns:
+            None
+        """
+
+        state = binascii.b2a_hex(os.urandom(16))
+        if PY3K:
+            state = state.decode()
+        URL = 'https://{}{}?clientid={}&appid={}&deviceid=phuepy&devicename=phuepy&state={}&response_type=code'.format(
+            self.API, self.ENDPOINT_AUTH, self.clientid, self.appid, state)
+        try:
+            webbrowser.open(URL)
+        except:
+            logger.info('The was an error opening the web browser')
+            pass
+        print('Your web browser should open a Philips Hue page asking you to provide authorisation to access your Philips Hue system.\nNote that you need to sign in with your Philips Hue account, not your developer account.\nIf your browser doesn\'t open, you can manually visit the following address:\n' + URL + '\nOnce you have provided authorisation, you will be redirected to the callback URL that you specified when setting up your developer credentials.\nPlease enter the entire address of the page you are sent to after completing authorisation:')
+        resp = input('Address: ')
+        parsed = urlparse(resp)
+        if parse_qs(parsed.query)['state'][0] != state:
+            # Confirm that the code in the callback URL matches what we
+            # generated in the `state` variable.
+            logger.info('URL was not validated. State code {} is not equal to {}',
+                        parse_qs(parsed.query)['state'][0], state)
+            raise ValueError('The URL is not valid.')
+        code = parse_qs(parsed.query)['code'][0]
+        # Use the `code` from the callback URL to obtain an nonce from the API
+        params = urlencode({'code': code, 'grant_type': 'authorization_code'})
+        www_authenticate = self.__get_nonce__(self.ENDPOINT_TOKEN, params)
+        # Now exchange the `nonce` and `code` for our tokens.
+        headers = {'Authorization': self.__digest__(
+            self.ENDPOINT_TOKEN, www_authenticate)}
+        connection = httplib.HTTPSConnection(self.API, timeout=20)
+        connection.request('POST',
+                           self.ENDPOINT_TOKEN + '?' + params,
+                           None,
+                           headers)
+        self.__parse_token_json__(connection.getresponse())
+        connection.close()
+
+    def __get_nonce__(self, url, params):
+        """ Obtains an nonce from the Philips Hue API to be used in the
+        digest calculations.
+        Returns a dict containing the `realm` and `nonce` from the
+        `WWW-Authenticate` header.
+        """
+
+        connection = httplib.HTTPSConnection(self.API, timeout=20)
+        connection.request('POST', url + '?' + params)
+        response = connection.getresponse()
+        www_authenticate = response.getheader('WWW-Authenticate')
+        # Use a regex to parse the string contained in the `WWW-Authenticate`
+        # header and obtain the `realm` and `nonce` values.
+        # Example header: WWW-Authenticate: Digest realm="oauth2_client@api.meethue.com", nonce="7b6e45de18ac4ee452ee0a0de91dbb10"
+        reg = re.compile(r'(\w+)[:=][\s"]?([^",]+)"?')
+        www_authenticate = dict(reg.findall(www_authenticate))
+        logger.debug('Obtained nonce: {}, realm: {}'
+                     .format(www_authenticate['nonce'],
+                             www_authenticate['realm']))
+        connection.close()
+        return www_authenticate
+
+    def __parse_token_json__(self, resp):
+        """ Parses the JSON string from the Philips Hue API that is received
+        when obtaining a new token or refreshing the tokens.
+
+        The expiry time is caluclated and recorded in UTC in the
+        `access_token_exp` and `refresh_token_exp` attributes.
+        """
+
+        logger.debug('Response from API: {} {}'.format(resp.status, resp.reason))
+        token = json.loads(resp.read())
+        logger.debug('Text from API: {}'.format(token))
+        if resp.status == 200:
+            if token['access_token']:  # All values will be blank if failed due to query error.
+                self.access_token = token['access_token']
+                self.refresh_token = token['refresh_token']
+                self.access_token_exp = datetime.utcnow() + timedelta(
+                    seconds=(int(token['access_token_expires_in'])))
+                self.refresh_token_exp = datetime.utcnow() + timedelta(
+                    seconds=(int(token['refresh_token_expires_in'])))
+                self.access_token_exp = self.access_token_exp.replace(
+                    tzinfo=UTC)
+                self.refresh_token_exp = self.refresh_token_exp.replace(
+                    tzinfo=UTC)
+                if self.saveto:
+                    self.save()
+            else:
+                raise PhueAuthorisationError(None,
+                                             'Unable to obtain tokens from API')
+        else:
+            raise PhueAuthorisationError(token['ErrorCode'], token['Error'])
+
+    def __utc_to_local__(self, utc_dt):
+        """ Converts a UTC datetime object to an unaware datetime object in
+        local time
+        """
+
+        timestamp = calendar.timegm(utc_dt.timetuple())
+        local_dt = datetime.fromtimestamp(timestamp)
+        return local_dt.replace(microsecond=utc_dt.microsecond)
+
+    def __digest__(self, url, www_authenticate, verb='POST'):
+        """ Returns an Authorization header that includes the digest hash
+
+        Args:
+            url (str): The API endpoint the request will be sent to
+            www_authenticate (dict): The nonce and realm from the initial
+                challange
+            verb (str optional): The HTTP request type (default POST)
+
+        Returns:
+            header: The Authorization header
+        """
+
+        part1 = ':'.join([
+            self.clientid,
+            www_authenticate['realm'],
+            self.clientsecret,
+        ])
+        part3 = ':'.join([verb, url])
+        if PY3K:
+            part1 = part1.encode()
+            part3 = part3.encode()
+        digest_plain = ':'.join([
+            hashlib.md5(part1).hexdigest(),
+            www_authenticate['nonce'],
+            hashlib.md5(part3).hexdigest(),
+        ])
+        if PY3K:
+            digest_plain = digest_plain.encode()
+        return ('Digest username="{}", realm="{}", nonce="{}", uri="{}", response="{}"'
+                .format(
+                    self.clientid,
+                    www_authenticate['realm'],
+                    www_authenticate['nonce'],
+                    url,
+                    hashlib.md5(digest_plain).hexdigest()
+                    )
+                )
+
+    @property
+    def access_expires(self):
+        """ Returns a human friendly expiry time in local time.
+        """
+
+        return self.__utc_to_local__(self.access_token_exp).strftime('%c')
+
+    @property
+    def refresh_expires(self):
+        """ Returns a human friendly expiry time in local time.
+        """
+
+        return self.__utc_to_local__(self.refresh_token_exp).strftime('%c')
+
+    @property
+    def refresh_required(self):
+        """ Returns a boolean, `True` if the access token has expired (or will
+        expire in the next 30 minutes) and can be refreshed,
+        `False` if the access token is still valid.
+        """
+
+        if (self.access_token_exp - timedelta(minutes=30)) > datetime.now(UTC):
+            return False
+        else:
+            return True
+        pass
+
+    @property
+    def valid(self):
+        """ Returns a boolean, `True` if the access or refresh tokens
+        are still valid, `False` if they are both expired. If `False`, then a
+        new `Token` object will need to be created.
+        """
+
+        if (self.refresh_token_exp) > datetime.now(UTC):
+            return True
+        else:
+            return False
+        pass
+
+    def save(self, saveto=None):
+        """ Save the token data so it can be loaded later.
+
+        This is acheived by serialising `__dict__` into JSON, removing
+        `self.saveto` from the JSON string and writing it to the location
+        specified in in the `saveto` parameter (if specified), or the location
+        in `self.saveto`. If both `saveto` and `self.saveto` are specified, the
+        method parameter will take precendece, and will update `self.saveto`
+        to match the new location. If none are specified, an `AttributeError`
+        is raised.
+        `saveto` is string representing a file path.
+
+        Args:
+            saveto (str, optional): The file to save details to,
+                overriding the existing save location (if it is set)
+
+        Returns:
+            None
+        """
+
+        if saveto:
+            self.saveto = saveto
+        if self.saveto:
+            current_state = deepcopy(self.__dict__)
+            current_state.pop('saveto')
+            current_state['access_token_exp'] = (current_state['access_token_exp']
+                                                 .replace(tzinfo=None).isoformat())
+            current_state['refresh_token_exp'] = (current_state['refresh_token_exp']
+                                                  .replace(tzinfo=None).isoformat())
+            with open(self.saveto, 'w') as f:
+                text = json.dumps(current_state)
+                logger.debug('Saving text to token file: {}'.format(text))
+                f.write(text)
+        else:
+            raise AttributeError('No save location is defined.')
+
+    def load(self, loadfrom):
+        """ Loads attributes from a JSON string stored in a file written by the
+        save method.
+
+        Args:
+            loadfrom (str): A path to the file to load details from
+        """
+
+        try:
+            with open(loadfrom, 'r') as f:
+                text = f.read()
+                current_state = json.loads(text)
+                logger.debug('Loading token from file: {}'.format(text))
+        except FileNotFoundError:
+            raise PhueInvalidToken(None, 'No token exists yet. Generate one first')
+        try:
+            self.saveto = loadfrom
+            self.clientid = current_state['clientid']
+            self.clientsecret = current_state['clientsecret']
+            self.appid = current_state['appid']
+            self.access_token = current_state['access_token']
+            self.refresh_token = current_state['refresh_token']
+            self.access_token_exp = datetime.strptime(
+                current_state['access_token_exp'],
+                '%Y-%m-%dT%H:%M:%S.%f').replace(tzinfo=UTC)
+            self.refresh_token_exp = datetime.strptime(
+                current_state['refresh_token_exp'],
+                '%Y-%m-%dT%H:%M:%S.%f').replace(tzinfo=UTC)
+        except KeyError:
+            raise PhueInvalidToken(None, 'This token file is corrupt or invalid')
+        self.refresh()
+
+    def refresh(self, force=False):
+        """ Refreshes the current tokens.
+
+        If the access token is still valid (i.e. doesn't expire in the next 30
+        minutes), then the tokens won't be refreshed unless the `force`
+        parameter is `True`.
+
+        If the saveto attribute has a value, then the new token details
+        are also saved to the file.
+
+        Args:
+            force (bool optional): Refresh the token, even if it hasn't expired
+
+        Returns:
+            True if refreshed, False if not refreshed.
+        """
+
+        if self.valid:
+            if force or self.refresh_required:
+                params = urlencode({'grant_type': 'refresh_token'})
+                www_authenticate = self.__get_nonce__(
+                    self.ENDPOINT_REFRESH, params)
+                data = urlencode({'refresh_token': self.refresh_token})
+                headers = {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Authorization': self.__digest__(self.ENDPOINT_REFRESH,
+                                                     www_authenticate)
+                }
+                connection = httplib.HTTPSConnection(self.API, timeout=20)
+                connection.request('POST',
+                                   self.ENDPOINT_REFRESH + '?' + params,
+                                   data,
+                                   headers)
+                self.__parse_token_json__(connection.getresponse())
+                logger.info('Token refreshed. Access expires: {}, Refresh Expires: {}'
+                            .format(self.access_token_exp.isoformat(),
+                                    self.refresh_token_exp.isoformat()))
+                connection.close()
+                return True
+            else:
+                logger.info('Refresh not required.')
+                return False
+        else:
+            msg = 'This token has expired. Please generate a new token.'
+            logger.exception(msg)
+            raise PhueTokenExpired(None, msg)
+
+    def bearer(self):
+        """ A convinence method to get the current access token in a format to
+        use i nan Authorization header
+
+        If the access token needs refreshing, this method will refresh it first,
+        then return the updated access token.
+
+        Args:
+            None
+
+        Returns:
+            token (str): A valid Bearer token to use in the Authorization header
+                when accessing the Philips Hue API
+        """
+
+        if self.valid:
+            self.refresh(force=False)
+            return 'Bearer {}'.format(self.access_token)
+        else:
+            msg = 'This token has expired. Please generate a new token.'
+            logger.exception(msg)
+            raise PhueTokenExpired(None, msg)
+
 
 if __name__ == '__main__':
     import argparse
@@ -1245,16 +1718,31 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--host', required=True)
     parser.add_argument('--config-file-path', required=False)
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument('--token', action='store_true')
+    group.add_argument('--host')
     args = parser.parse_args()
 
-    while True:
-        try:
-            b = Bridge(args.host, config_file_path=args.config_file_path)
-            break
-        except PhueRegistrationException as e:
-            if PY3K:
+    if args.token:
+        if os.getenv(USER_HOME) is not None and os.access(os.getenv(USER_HOME), os.W_OK):
+            token_path = os.path.join(os.getenv(USER_HOME), '.python_hue_token')
+        elif 'iPad' in platform.machine() or 'iPhone' in platform.machine() or 'iPad' in platform.machine():
+            token_path = os.path.join(os.getenv(USER_HOME), 'Documents', '.python_hue_token')
+        else:
+            token_path = os.path.join(os.getcwd(), '.python_hue_token')
+        clientid = input('Client ID: ')
+        clientsecret = input('Client Secret: ')
+        appid = input('App ID: ')
+        saveto = input('Save token to (default: {}): '.format(token_path))
+        if not saveto:
+            saveto = token_path
+        RemoteToken(clientid, clientsecret, appid, saveto=saveto)
+        print('Saved token to {}'.format(saveto))
+    else:
+        while True:
+            try:
+                b = Bridge(args.host, config_file_path=args.config_file_path)
+                break
+            except PhueRegistrationException as e:
                 input('Press button on Bridge then hit Enter to try again')
-            else:
-                raw_input('Press button on Bridge then hit Enter to try again')  # noqa
