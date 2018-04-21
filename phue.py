@@ -1408,7 +1408,6 @@ class RemoteToken(object):
             webbrowser.open(URL)
         except:
             logger.info('The was an error opening the web browser')
-            pass
         print('Your web browser should open a Philips Hue page asking you to provide authorisation to access your Philips Hue system.\nNote that you need to sign in with your Philips Hue account, not your developer account.\nIf your browser doesn\'t open, you can manually visit the following address:\n' + URL + '\nOnce you have provided authorisation, you will be redirected to the callback URL that you specified when setting up your developer credentials.\nPlease enter the entire address of the page you are sent to after completing authorisation:')
         resp = input('Address: ')
         parsed = urlparse(resp)
@@ -1559,7 +1558,6 @@ class RemoteToken(object):
             return False
         else:
             return True
-        pass
 
     @property
     def valid(self):
@@ -1572,7 +1570,6 @@ class RemoteToken(object):
             return True
         else:
             return False
-        pass
 
     def save(self, saveto=None):
         """ Save the token data so it can be loaded later.
