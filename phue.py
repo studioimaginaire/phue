@@ -1478,7 +1478,7 @@ class RemoteToken(object):
                 self.refresh_token_exp = self.refresh_token_exp.replace(
                     tzinfo=UTC)
                 if self.saveto:
-                    self.save()
+                    self.__save__()
             else:
                 raise PhueAuthorisationError(None,
                                              'Unable to obtain tokens from API')
@@ -1571,10 +1571,12 @@ class RemoteToken(object):
         else:
             return False
 
-    def save(self, saveto=None):
-        """ Save the token data so it can be loaded later.
+    def __save__(self, saveto=None):
+        """ Save the token data so it can be loaded later. This is meant to be
+        a private method. For normal interaction, use the `save()` method, not
+        this `__save__()` method.
 
-        This is acheived by serialising `__dict__` into JSON, removing
+        Saving is acheived by serialising `__dict__` into JSON, removing
         `self.saveto` from the JSON string and writing it to the location
         specified in in the `saveto` parameter (if specified), or the location
         in `self.saveto`. If both `saveto` and `self.saveto` are specified, the
@@ -1606,6 +1608,22 @@ class RemoteToken(object):
                 f.write(text)
         else:
             raise AttributeError('No save location is defined.')
+
+    def save(self, saveto):
+        """ A public method to change (or set) the location for the token file.
+        The positional parameter `saveto` is required.
+
+        If the token file location is updated using this method, the old token
+        file will remain on the file system, but it's details will become
+        invalid by forcing an update of the access and refresh tokens in the new
+        token file, rendering the old ones useless.
+
+        Args:
+            saveto (str): The path of a file to save details to.
+        """
+
+        self.__save__(saveto=saveto)
+        self.refresh(force=True)
 
     def load(self, loadfrom):
         """ Loads attributes from a JSON string stored in a file written by the
@@ -1688,7 +1706,7 @@ class RemoteToken(object):
 
     def bearer(self):
         """ A convinence method to get the current access token in a format to
-        use i nan Authorization header
+        use in an Authorization header
 
         If the access token needs refreshing, this method will refresh it first,
         then return the updated access token.

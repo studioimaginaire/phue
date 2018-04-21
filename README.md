@@ -304,6 +304,8 @@ You can read more about the token and authentication at https://developers.meeth
 #### Interacting with the token
 You shouldn't need to interact with the token as the code refresh process is handled automatically. But if you feel like you want to, or have the need to inspect it closer, then the token is just an attribute of the `RemoteBridge` object (aptly named `token`).
 ```python
+>>> from phue import RemoteBridge
+>>> b = RemoteBridge()
 >>> b.token
 <phue.RemoteToken object at 0x102caedd0>
 ```
@@ -325,7 +327,7 @@ False
 >>> b.token.access_expires
 'Sun Apr 22 10:35:35 2018'
 
-# When does the refresh token expire?
+# When does the Refresh token expire?
 >>> b.token.refresh_expires
 'Sun Aug  5 10:35:35 2018'
 
@@ -353,8 +355,8 @@ u'ghcgX4uJ3FMdGpBUD7cBGNQV4hVK'
 >>> b.token.refresh_token
 u'WMsPGsx5FsvUwEpjwz94noxdJ7mtxgNK'
 
-# Save to a new or different token file.
-b.token.save()
+# Save to a new or different token file, invalidating the old token file.
+b.token.save('/path/to/new/location.token')
 ```
 
 ## Using phue with Max/MSP via Jython
