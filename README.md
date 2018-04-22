@@ -356,7 +356,7 @@ u'ghcgX4uJ3FMdGpBUD7cBGNQV4hVK'
 u'WMsPGsx5FsvUwEpjwz94noxdJ7mtxgNK'
 
 # Save to a new or different token file, invalidating the old token file.
-b.token.save('/path/to/new/location.token')
+>>> b.token.save('/path/to/new/location.token')
 ```
 
 ## Using phue with Max/MSP via Jython

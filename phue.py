@@ -36,6 +36,7 @@ if PY3K:
     import http.client as httplib
     from datetime import timezone
     from urllib.parse import parse_qs, urlparse, urlencode
+
     UTC = timezone.utc
 else:
     import httplib
@@ -43,19 +44,17 @@ else:
     from urllib import urlencode
     from urlparse import parse_qs, urlparse
 
-    FileNotFoundError = IOError
-
     class UTC(tzinfo):
         def utcoffset(self, dt):
             return timedelta(0)
-
         def tzname(self, dt):
             return "UTC"
-
         def dst(self, dt):
             return timedelta(0)
-    UTC = UTC()
+
+    FileNotFoundError = IOError
     input = raw_input
+    UTC = UTC()
 
 logger = logging.getLogger('phue')
 
@@ -1374,7 +1373,7 @@ class RemoteToken(object):
             saveto (str optional): The file to save details to so they can be
                 reloaded at a later time.
             load (str optional): If specified, load token data from the path
-                instead of attempting to autorise a new one. This will override
+                instead of attempting to authorise a new one. This will override
                 the remaining attributes, as they are filled from the file
                 contents instead.
         """
@@ -1386,11 +1385,11 @@ class RemoteToken(object):
             self.clientsecret = clientsecret
             self.appid = appid
             self.saveto = saveto
-            self.__authorize__()
+            self.__authorise__()
         else:
             raise ValueError('Missing required argumets clientid, clientsecret and appid')
 
-    def __authorize__(self):
+    def __authorise__(self):
         """ Obtains new access and refresh tokens from the Philips Hue API
 
         This method is intended to be called from the `__init__` method.
