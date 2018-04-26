@@ -1146,12 +1146,15 @@ class Bridge(object):
     def get_scene(self):
         return self.request('GET', '/api/' + self.username + '/scenes')
 
-    def activate_scene(self, group_id, scene_id):
+    def activate_scene(self, group_id, scene_id, transition_time=4):
         return self.request('PUT', '/api/' + self.username + '/groups/' +
                             str(group_id) + '/action',
-                            {"scene": scene_id})
+                            {
+                                "scene": scene_id,
+                                "transitiontime": transition_time
+                            })
 
-    def run_scene(self, group_name, scene_name):
+    def run_scene(self, group_name, scene_name, transition_time=4):
         """Run a scene by group and scene name.
 
         As of 1.11 of the Hue API the scenes are accessable in the
@@ -1167,6 +1170,8 @@ class Bridge(object):
         perfect, but is convenient for setting lights symbolically (and
         can be improved later).
 
+        :param transition_time: The duration of the transition from the
+        light’s current state to the new state in a multiple of 100ms
         :returns True if a scene was run, False otherwise
 
         """
