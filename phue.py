@@ -1185,14 +1185,14 @@ class Bridge(object):
             logger.warn("run_scene: No scene found {}".format(scene_name))
             return False
         if len(scenes) == 1:
-            self.activate_scene(group.group_id, scenes[0].scene_id)
+            self.activate_scene(group.group_id, scenes[0].scene_id, transition_time)
             return True
         # otherwise, lets figure out if one of the named scenes uses
         # all the lights of the group
         group_lights = sorted([x.light_id for x in group.lights])
         for scene in scenes:
             if group_lights == scene.lights:
-                self.activate_scene(group.group_id, scene.scene_id)
+                self.activate_scene(group.group_id, scene.scene_id, transition_time)
                 return True
         logger.warn("run_scene: did not find a scene: {} "
                     "that shared lights with group {}".format(scene_name, group_name))
