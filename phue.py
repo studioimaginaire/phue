@@ -1143,8 +1143,11 @@ class Bridge(object):
     def scenes(self):
         return [Scene(k, **v) for k, v in self.get_scene().items()]
 
-    def get_scene(self):
-        return self.request('GET', '/api/' + self.username + '/scenes')
+    def get_scene(self, scene_id=None):
+        if scene_id is None:
+            return self.request('GET', '/api/' + self.username + '/scenes')
+        else:
+            return self.request('GET', '/api/' + self.username + '/scenes/' + str(scene_id))
 
     def activate_scene(self, group_id, scene_id, transition_time=4):
         return self.request('PUT', '/api/' + self.username + '/groups/' +
