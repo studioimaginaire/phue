@@ -1053,10 +1053,10 @@ class Bridge(object):
         for group_id in groups:
             if PY3K:
                 if name == groups[group_id]['name']:
-                    return group_id
+                    return int(group_id)
             else:
                 if name.decode('utf-8') == groups[group_id]['name']:
-                    return group_id
+                    return int(group_id)
         return False
 
     def get_group(self, group_id=None, parameter=None):
