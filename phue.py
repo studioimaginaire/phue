@@ -549,7 +549,8 @@ class Scene(object):
 
     def __init__(self, sid, appdata=None, lastupdated=None,
                  lights=None, locked=False, name="", owner="",
-                 picture="", recycle=False, version=0):
+                 picture="", recycle=False, version=0, type="", group=0,
+                 *args, **kwargs):
         self.scene_id = sid
         self.appdata = appdata or {}
         self.lastupdated = lastupdated
@@ -563,6 +564,8 @@ class Scene(object):
         self.picture = picture
         self.recycle = recycle
         self.version = version
+        self.type = type
+        self.group = group
 
     def __repr__(self):
         # like default python repr function, but add sensor name
