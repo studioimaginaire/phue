@@ -549,7 +549,7 @@ class Scene(object):
 
     def __init__(self, sid, appdata=None, lastupdated=None,
                  lights=None, locked=False, name="", owner="",
-                 picture="", recycle=False, version=0, type="", group=0,
+                 picture="", recycle=False, version=0, type="", group="",
                  *args, **kwargs):
         self.scene_id = sid
         self.appdata = appdata or {}
