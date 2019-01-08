@@ -48,6 +48,19 @@ def is_string(data):
     else:
         return isinstance(data, str) or isinstance(data, unicode)  # noqa
 
+def encodeString(string):
+    """Utility method to encode strings as utf-8."""
+    if PY3K:
+        return string
+    else:
+        return string.encode('utf-8')
+
+def decodeString(string):
+    """Utility method to decode strings as utf-8."""
+    if PY3K:
+        return string
+    else:
+        return string.decode('utf-8')
 
 class PhueException(Exception):
 
@@ -118,11 +131,7 @@ class Light(object):
     @property
     def name(self):
         '''Get or set the name of the light [string]'''
-        if PY3K:
-            self._name = self._get('name')
-        else:
-            self._name = self._get('name').encode('utf-8')
-        return self._name
+        return encodeString(self._get('name'))
 
     @name.setter
     def name(self, value):
@@ -360,11 +369,7 @@ class Sensor(object):
     @property
     def name(self):
         '''Get or set the name of the sensor [string]'''
-        if PY3K:
-            self._name = self._get('name')
-        else:
-            self._name = self._get('name').encode('utf-8')
-        return self._name
+        return encodeString(self._get('name'))
 
     @name.setter
     def name(self, value):
@@ -467,14 +472,9 @@ class Group(Light):
             name = group_id
             groups = bridge.get_group()
             for idnumber, info in groups.items():
-                if PY3K:
-                    if info['name'] == name:
-                        self.group_id = int(idnumber)
-                        break
-                else:
-                    if info['name'] == name.decode('utf-8'):
-                        self.group_id = int(idnumber)
-                        break
+                if info['name'] == decodeString(name):
+                    self.group_id = int(idnumber)
+                    break
             else:
                 raise LookupError("Could not find a group by that name.")
 
@@ -499,11 +499,7 @@ class Group(Light):
     @property
     def name(self):
         '''Get or set the name of the light group [string]'''
-        if PY3K:
-            self._name = self._get('name')
-        else:
-            self._name = self._get('name').encode('utf-8')
-        return self._name
+        return encodeString(self._get('name'))
 
     @name.setter
     def name(self, value):
@@ -559,7 +555,7 @@ class Scene(object):
         else:
             self.lights = []
         self.locked = locked
-        self.name = name
+        self.name = encodeString(name)
         self.owner = owner
         self.picture = picture
         self.recycle = recycle
@@ -568,7 +564,7 @@ class Scene(object):
         self.group = group
 
     def __repr__(self):
-        # like default python repr function, but add sensor name
+        # like default python repr function, but add scene name
         return '<{0}.{1} id="{2}" name="{3}" lights={4}>'.format(
             self.__class__.__module__,
             self.__class__.__name__,
@@ -666,11 +662,8 @@ class Bridge(object):
         result = connection.getresponse()
         response = result.read()
         connection.close()
-        if PY3K:
-            return json.loads(response.decode('utf-8'))
-        else:
-            logger.debug(response)
-            return json.loads(response)
+        logger.debug(response)
+        return json.loads(decodeString(response))
 
     def get_ip_address(self, set_result=False):
 
@@ -758,12 +751,8 @@ class Bridge(object):
         """ Lookup a light id based on string name. Case-sensitive. """
         lights = self.get_light()
         for light_id in lights:
-            if PY3K:
-                if name == lights[light_id]['name']:
-                    return light_id
-            else:
-                if name.decode('utf-8') == lights[light_id]['name']:
-                    return light_id
+            if decodeString(name) == lights[light_id]['name']:
+                return light_id
         return False
 
     def get_light_objects(self, mode='list'):
@@ -788,12 +777,8 @@ class Bridge(object):
         """ Lookup a sensor id based on string name. Case-sensitive. """
         sensors = self.get_sensor()
         for sensor_id in sensors:
-            if PY3K:
-                if name == sensors[sensor_id]['name']:
-                    return sensor_id
-            else:
-                if name.decode('utf-8') == sensors[sensor_id]['name']:
-                    return sensor_id
+            if decodeString(name) == sensors[sensor_id]['name']:
+                return sensor_id
         return False
 
     def get_sensor_objects(self, mode='list'):
@@ -823,10 +808,7 @@ class Bridge(object):
             return self.lights_by_id[key]
         except:
             try:
-                if PY3K:
-                    return self.lights_by_name[key]
-                else:
-                    return self.lights_by_name[key.decode('utf-8')]
+                return self.lights_by_name[decodeString(key)]
             except:
                 raise KeyError(
                     'Not a valid key (integer index starting with 1, or light name): ' + str(key))
@@ -1054,12 +1036,8 @@ class Bridge(object):
         """ Lookup a group id based on string name. Case-sensitive. """
         groups = self.get_group()
         for group_id in groups:
-            if PY3K:
-                if name == groups[group_id]['name']:
-                    return int(group_id)
-            else:
-                if name.decode('utf-8') == groups[group_id]['name']:
-                    return int(group_id)
+            if decodeString(name) == groups[group_id]['name']:
+                return int(group_id)
         return False
 
     def get_group(self, group_id=None, parameter=None):
