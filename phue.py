@@ -662,8 +662,11 @@ class Bridge(object):
         result = connection.getresponse()
         response = result.read()
         connection.close()
+        if PY3K:
+            response = response.decode('utf-8')
+
         logger.debug(response)
-        return json.loads(decodeString(response))
+        return json.loads(response)
 
     def get_ip_address(self, set_result=False):
 
