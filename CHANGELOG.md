@@ -1,5 +1,9 @@
 # phue changelog
 
+## r11
+- Add support for deleting scenes
+- Various bug fixes
+
 ## r10
 - Misc bug fixes
 - Better support for schedules
