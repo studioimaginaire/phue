@@ -38,7 +38,7 @@ if platform.system() == 'Windows':
 else:
     USER_HOME = 'HOME'
 
-__version__ = '1.1'
+__version__ = '1.2'
 
 
 def is_string(data):
