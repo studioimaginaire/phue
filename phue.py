@@ -1047,7 +1047,7 @@ class Bridge(object):
         if is_string(group_id):
             group_id = self.get_group_id_by_name(group_id)
         if group_id is False:
-            logger.error('Group name does not exit')
+            logger.error('Group name does not exist')
             return
         if group_id is None:
             return self.request('GET', '/api/' + self.username + '/groups/')
@@ -1091,7 +1091,7 @@ class Bridge(object):
             else:
                 converted_group = group
             if converted_group is False:
-                logger.error('Group name does not exit')
+                logger.error('Group name does not exist')
                 return
             if parameter == 'name' or parameter == 'lights':
                 result.append(self.request('PUT', '/api/' + self.username + '/groups/' + str(converted_group), data))
