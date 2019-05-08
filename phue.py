@@ -891,7 +891,7 @@ class Bridge(object):
         logger.debug(result)
         return result
         
-    def scan_lights():
+    def scan_lights(self):
         if self.request('GET', '/api/' + self.username + '/lights/new')['lastscan'] != 'active':
             logger.info("Scanning for new lights")
             # empty POST request initialises scan
@@ -899,7 +899,7 @@ class Bridge(object):
         else:
             logger.info("Scan for new light requested, but there is an ongoing scan")
     
-    def scan_lights_active():
+    def scan_lights_active(self):
         return self.request('GET', '/api/' + self.username + '/lights/new')['lastscan'] == 'active'
         
     # Sensors #####
@@ -1040,7 +1040,7 @@ class Bridge(object):
         except:
             logger.debug("Unable to delete nonexistent sensor with ID {0}".format(sensor_id))
     
-    def scan_sensors():
+    def scan_sensors(self):
         if self.request('GET', '/api/' + self.username + '/sensors/new')['lastscan'] != 'active':
             logger.info("Scanning for new sensors")
             # empty POST request initialises scan
@@ -1048,7 +1048,7 @@ class Bridge(object):
         else:
             logger.info("Scan for new sensor requested, but there is an ongoing scan")
     
-    def scan_sensors_active():
+    def scan_sensors_active(self):
         return self.request('GET', '/api/' + self.username + '/sensors/new')['lastscan'] == 'active'
 
     # Groups of lights #####
