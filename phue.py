@@ -895,7 +895,7 @@ class Bridge(object):
         if self.request('GET', '/api/' + self.username + '/lights/new')['lastscan'] != 'active':
             logger.info("Scanning for new lights")
             # empty POST request initialises scan
-            self.request('POST', '/api/' + self.username + 'lights', "")
+            self.request('POST', '/api/' + self.username + '/lights', "")
         else:
             logger.info("Scan for new light requested, but there is an ongoing scan")
     
@@ -1044,7 +1044,7 @@ class Bridge(object):
         if self.request('GET', '/api/' + self.username + '/sensors/new')['lastscan'] != 'active':
             logger.info("Scanning for new sensors")
             # empty POST request initialises scan
-            self.request('POST', '/api/' + self.username + 'sensors', "")
+            self.request('POST', '/api/' + self.username + '/sensors', "")
         else:
             logger.info("Scan for new sensor requested, but there is an ongoing scan")
     
