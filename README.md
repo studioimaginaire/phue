@@ -116,7 +116,7 @@ lights[1].brightness = 127
 # Get a dictionary with the light name as the key
 light_names = b.get_light_objects('name')
 
-# Set the birghtness of the bulb named "Kitchen"
+# Set the brightness of the bulb named "Kitchen"
 light_names["Kitchen"].brightness = 254
 
 # Set lights using name as key
