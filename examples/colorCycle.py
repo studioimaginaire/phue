@@ -1,5 +1,9 @@
-
 from phue import Bridge
+# How to:
+# 1. Run discoverSelected.py
+# 2. Set hueLamps to the output of discoverSelected
+# 3. Set bridge ip
+# 4. Run programm
 
 ip = '192.168.X.XXX'
 
