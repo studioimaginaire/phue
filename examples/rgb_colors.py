@@ -38,12 +38,13 @@ b = Bridge() # Enter bridge IP here.
 #If running for the first time, press button on bridge and run with b.connect() uncommented
 #b.connect()
 
+# RGB colors to XY  
 xy = rgb_to_xy(1.0, 0.28627, 0.95686)
 
 lights = b.get_light_objects()
 
 for light in lights:
-        # use y might be used as brightness value, however, dark colors will turn the lights off
+        # y might be used as brightness value, however, dark colors will turn the lights off
         #brightness = int(xy[1]*255)
         brightness = 255 
 	light.xy = xy 
