@@ -1,6 +1,5 @@
 #!/usr/bin/python
 from phue import Bridge
-import random
 
 def rgb_to_xy(red, green, blue):
     """ conversion of RGB colors to CIE1931 XY colors
@@ -14,6 +13,7 @@ def rgb_to_xy(red, green, blue):
     Returns:
         xy (list): x and y
     """
+
     # gamma correction
     red = pow((red + 0.055) / (1.0 + 0.055), 2.4) if red > 0.04045 else (red / 12.92)
     green = pow((green + 0.055) / (1.0 + 0.055), 2.4) if green > 0.04045 else (green / 12.92)
@@ -44,9 +44,7 @@ xy = rgb_to_xy(1.0, 0.28627, 0.95686)
 lights = b.get_light_objects()
 
 for light in lights:
-        # y might be used as brightness value, however, dark colors will turn the lights off
-        #brightness = int(xy[1]*255)
-        brightness = 255 
-	light.xy = xy 
-
-
+    # y might be used as brightness value, however, dark colors will turn the lights off
+    #brightness = int(xy[1]*255)
+    brightness = 255 
+    light.xy = xy 
