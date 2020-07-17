@@ -1014,12 +1014,6 @@ class Bridge(object):
         logger.debug(result)
         return result
 
-    def delete_scene(self, scene_id):
-        try:
-            return self.request('DELETE', '/api/' + self.username + '/scenes/' + str(scene_id))
-        except:
-            logger.debug("Unable to delete scene with ID {0}".format(scene_id))
-
     def delete_sensor(self, sensor_id):
         try:
             name = self.sensors_by_id[sensor_id].name
@@ -1127,6 +1121,32 @@ class Bridge(object):
     def scenes(self):
         return [Scene(k, **v) for k, v in self.get_scene().items()]
 
+    def create_group_scene(self, name, group):
+        """Create a Group Scene
+
+        Group scenes are based on the definition of groups and contain always all
+        lights from the selected group. No other lights from other rooms can be
+        added to a group scene and the group scene can not contain less lights
+        as available in the selected group. If a group is extended with new lights,
+        the new lights are added with default color to all group scenes based on
+        the corresponding group. This app has no influence on this behavior, it
+        was defined by Philips.
+
+        :param name: The name of the scene to be created
+        :param group: The group id of where the scene will be added
+        :return:
+        """
+        data = {
+            "name": name,
+            "group": group,
+            "recycle": True,
+            "type": "GroupScene"
+        }
+        return self.request('POST', '/api/' + self.username + '/scenes', data)
+
+    def modify_scene(self, scene_id, data):
+        return self.request('PUT', '/api/' + self.username + '/scenes/' + scene_id, data)
+
     def get_scene(self):
         return self.request('GET', '/api/' + self.username + '/scenes')
 
@@ -1181,6 +1201,12 @@ class Bridge(object):
         logger.warn("run_scene: did not find a scene: {} "
                     "that shared lights with group {}".format(scene_name, group_name))
         return False
+
+    def delete_scene(self, scene_id):
+        try:
+            return self.request('DELETE', '/api/' + self.username + '/scenes/' + str(scene_id))
+        except:
+            logger.debug("Unable to delete scene with ID {0}".format(scene_id))
 
     # Schedules #####
     def get_schedule(self, schedule_id=None, parameter=None):
