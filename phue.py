@@ -1150,6 +1150,14 @@ class Bridge(object):
     def get_scene(self):
         return self.request('GET', '/api/' + self.username + '/scenes')
 
+    def get_scene_by_id(self, scene_id):
+        """
+        Gets the attributes of a given scene.
+        :param scene_id: The scene id
+        :return:
+        """
+        return self.request('GET', '/api/' + self.username + '/scenes/' + scene_id)
+
     def activate_scene(self, group_id, scene_id, transition_time=4):
         return self.request('PUT', '/api/' + self.username + '/groups/' +
                             str(group_id) + '/action',
