@@ -691,7 +691,7 @@ class Bridge(object):
 
         ip = str(data[0]['internalipaddress'])
 
-        if ip is not '':
+        if ip:
             if set_result:
                 self.ip = ip
 
