@@ -102,6 +102,7 @@ class Light(object):
         self._reset_bri_after_on = None
         self._reachable = None
         self._type = None
+        self._uniqueid = None
 
     def __repr__(self):
         # like default python repr function, but add light name
@@ -308,6 +309,12 @@ class Light(object):
         '''Get the type of the light [string]'''
         self._type = self._get('type')
         return self._type
+
+    @property
+    def uniqueid(self):
+        '''Get the unique device ID of this light [string]'''
+        self._uniqueid = self._get('uniqueid')
+        return self._uniqueid
 
 
 class SensorState(dict):
