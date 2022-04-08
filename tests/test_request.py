@@ -4,10 +4,14 @@
 # means that this is even vaguely python code.
 
 import fixtures
-import mock
 import os
 import sys
 import testtools
+
+try:
+    from unittest import mock
+except ImportError:
+    import mock
 
 import phue
 import fakes
