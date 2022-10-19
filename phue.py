@@ -465,6 +465,8 @@ class Group(Light):
     def __init__(self, bridge, group_id):
         Light.__init__(self, bridge, None)
         del self.light_id  # not relevant for a group
+        self._any_on = None
+        self._all_on = None
 
         try:
             self.group_id = int(group_id)
@@ -508,6 +510,18 @@ class Group(Light):
         logger.debug("Renaming light group from '{0}' to '{1}'".format(
             old_name, value))
         self._set('name', self._name)
+
+    @property
+    def any_on(self):
+        """If true at least one light is on"""
+        self._any_on = self._get('any_on')
+        return self._any_on
+
+    @property
+    def all_on(self):
+        """If true at least one light is on"""
+        self._all_on = self._get('all_on')
+        return self._all_on
 
     @property
     def lights(self):
@@ -1049,6 +1063,8 @@ class Bridge(object):
             return self.request('GET', '/api/' + self.username + '/groups/' + str(group_id))
         elif parameter == 'name' or parameter == 'lights':
             return self.request('GET', '/api/' + self.username + '/groups/' + str(group_id))[parameter]
+        elif parameter in ('any_on', 'all_on'):
+            return self.request('GET', '/api/' + self.username + '/groups/' + str(group_id))['state'][parameter]
         else:
             return self.request('GET', '/api/' + self.username + '/groups/' + str(group_id))['action'][parameter]
 
