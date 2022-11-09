@@ -513,13 +513,13 @@ class Group(Light):
 
     @property
     def any_on(self):
-        """If true at least one light is on"""
+        """If true at least one light in the group is on"""
         self._any_on = self._get('any_on')
         return self._any_on
 
     @property
     def all_on(self):
-        """If true at least one light is on"""
+        """If true all lights in the group are on"""
         self._all_on = self._get('all_on')
         return self._all_on
 
