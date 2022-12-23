@@ -18,8 +18,10 @@ import json
 import logging
 import os
 import platform
+import queue
 import sys
 import socket
+from zeroconf import ServiceBrowser, ServiceListener, Zeroconf
 if sys.version_info[0] > 2:
     PY3K = True
 else:
@@ -608,6 +610,35 @@ class Bridge(object):
 
 
     """
+    @staticmethod
+    def discover(timeout = 3, name = None):
+        """ Discovers bridge on the network
+
+        Parameters:
+        -----------
+        timeout: int
+            The maximum search time
+        name: string
+            The name of the device or None to return the first found bridge
+
+        """
+
+        my_queue = queue.Queue()
+        class MyListener(ServiceListener):
+            def add_service(self, zc: Zeroconf, type_: str, discovered_name: str) -> None:
+                if name is None or name == discovered_name:
+                    my_queue.put(".".join([str(b) for b in zc.get_service_info(type_, discovered_name).addresses[0]]))
+
+        zeroconf = Zeroconf()
+        listener = MyListener()
+        browser = ServiceBrowser(zeroconf, "_hue._tcp.local.", listener)
+        try:
+            ip = my_queue.get(True, timeout)
+        except:
+            ip = None
+        zeroconf.close()
+        return ip
+
     def __init__(self, ip=None, username=None, config_file_path=None):
         """ Initialization function.
 
