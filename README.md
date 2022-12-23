@@ -36,6 +36,19 @@ phue works with Python 2.6.x, 2.7.x and 3.x
 
 ## Examples
 
+### Pairing on first usage
+
+Hue protocol requires pairing. `phue` stores configuration persistently so you could simply pair with the bridge once interactively before using `phue` in
+non-interactive scripts. An easy way to do this would be load the `phue` module interactively passing the bridge IP as a `--host` argument:
+
+```
+python3 -m phue --host 192.168.1.42
+```
+
+(Replace the IP with the IP of the Hue bridge). This will prompt you to pair with the bridge, and on success `phue` is fully setup.
+
+You could customize persistent storage location if needed `--config-file-path` on the commandline, or `Bridge(..., config_file_path=..)`.
+
 ### Basic usage
 
 Using the set_light and get_light methods you can control pretty much all the parameters :
