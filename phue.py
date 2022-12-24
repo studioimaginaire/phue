@@ -104,12 +104,16 @@ class Light(object):
         self._type = None
 
     def __repr__(self):
-        # like default python repr function, but add light name
-        return '<{0}.{1} object "{2}" at {3}>'.format(
+        """Returns a str that could be used to reconstruct the object."""
+        return '{0}.{1}(bridge={2}, light_id={3})'.format(
             self.__class__.__module__,
             self.__class__.__name__,
-            self.name,
-            hex(id(self)))
+            self.bridge.ip,
+            self.light_id)
+
+    def __str__(self):
+        """Returns a human-readable str that describes the object."""
+        return '{0} (id={1})'.format(self.name, self.light_id)
 
     # Wrapper functions for get/set through the bridge, adding support for
     # remembering the transitiontime parameter if the user has set it
@@ -352,12 +356,16 @@ class Sensor(object):
         self._recycle = None
 
     def __repr__(self):
-        # like default python repr function, but add sensor name
-        return '<{0}.{1} object "{2}" at {3}>'.format(
+        """Returns a str that could be used to reconstruct the object."""
+        return '{0}.{1}(bridge={2}, sensor_id={3})'.format(
             self.__class__.__module__,
             self.__class__.__name__,
-            self.name,
-            hex(id(self)))
+            self.bridge.ip,
+            self.sensor_id)
+
+    def __str__(self):
+        """Returns a human-readable str that describes the object."""
+        return '{0} (id={1})'.format(self.name, self.sensor_id)
 
     # Wrapper functions for get/set through the bridge
     def _get(self, *args, **kwargs):
@@ -480,6 +488,18 @@ class Group(Light):
             else:
                 raise LookupError("Could not find a group by that name.")
 
+    def __repr__(self):
+        """Returns a str that could be used to reconstruct the object."""
+        return '{0}.{1}(bridge={2}, group_id={3})'.format(
+            self.__class__.__module__,
+            self.__class__.__name__,
+            self.bridge.ip,
+            self.group_id)
+
+    def __str__(self):
+        """Returns a human-readable str that describes the object."""
+        return '{0} (id={1})'.format(self.name, self.group_id)
+
     # Wrapper functions for get/set through the bridge, adding support for
     # remembering the transitiontime parameter if the user has set it
     def _get(self, *args, **kwargs):
@@ -578,13 +598,18 @@ class Scene(object):
         self.group = group
 
     def __repr__(self):
-        # like default python repr function, but add scene name
-        return '<{0}.{1} id="{2}" name="{3}" lights={4}>'.format(
+        """Returns a str that could be used to reconstruct the object."""
+        return '{0}.{1}(sid={2}, name={3}, lights={4})'.format(
             self.__class__.__module__,
             self.__class__.__name__,
             self.scene_id,
             self.name,
             self.lights)
+
+    def __str__(self):
+        """Returns a human-readable str that describes the object."""
+        return '{0} (id={1})'.format(self.name, self.scene_id)
+
 
 
 class Bridge(object):
@@ -640,6 +665,19 @@ class Bridge(object):
         # self.seconds = 10
 
         self.connect()
+
+    def __repr__(self):
+        '''Returns a str that could be used to reconstruct the object.'''
+        return '{0}.{1}(ip={2}, username={3}, config_file_path={4})'.format(
+            self.__class__.__module__,
+            self.__class__.__name__,
+            self.ip,
+            self.username,
+            self.config_file_path)
+
+    def __str__(self):
+        '''Returns a human-readable str that describes the object.'''
+        return '{0} (ip={1})'.format(self.name, self.ip)
 
     @property
     def name(self):
