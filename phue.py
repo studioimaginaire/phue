@@ -62,6 +62,15 @@ def decodeString(string):
     else:
         return string.decode('utf-8')
 
+def kelvinToMired(kelvin, as_int=True):
+    """Utility method to convert units of Kelvin to units of Mired. If
+    as_int == True, the value will be rounded to the nearest whole number
+    and returned as an int"""
+    mired = 1e6 / kelvin
+    if as_int:
+        mired = int(round(mired))
+    return mired
+
 class PhueException(Exception):
 
     def __init__(self, id, message):
@@ -127,6 +136,49 @@ class Light(object):
                     kwargs.get('on', True) is False):
                 self._reset_bri_after_on = True
         return self.bridge.set_light(self.light_id, *args, **kwargs)
+
+    def set_startup(self, mode, **kwargs):
+        """Set the power-loss startup behavior of the light. The Philips default
+        mode is 'safety'. If custom is chose, pass additional arguments for
+        the settable parameters. 
+        
+        Parameters:
+            mode: 'custom' | 'lastonstate' | 'powerfail' | 'safety' 
+            kwargs:
+                bri (int): valid range is 0-254
+                hue (int): valid range is 0-65535
+                sat (int): valid range is 0-254
+                xy (list[float]): [x, y] pair of values, element valid range is 0-1
+                ct (int): valid range is 153-500
+                ct_k (int): valid range is 2000-6500 (takes precedence over ct)
+            """
+        valid_modes = ['custom', 'lastonstate', 'powerfail', 'safety']
+        valid_kwargs = ['bri', 'hue', 'sat', 'xy', 'ct', 'ct_k']
+
+        if mode not in valid_modes:
+            raise TypeError(f"set_startup() got unexpected argument {mode}")
+        
+        if 'ct_k' in kwargs:
+            ct_k = kwargs.pop('ct_k')
+            kwargs['ct'] = kelvinToMired(ct_k)
+
+        startup_config = {'mode':mode}
+        
+        if mode == 'custom':
+            startup_config['customsettings'] = {}
+            for key, value in kwargs.items():
+                if key not in valid_kwargs:
+                    raise TypeError(f"set_startup() got unexpected keyword {key}")
+                startup_config['customsettings'][key] = value
+        
+        message = {
+            'config':{
+                'startup':startup_config
+            }
+        }
+
+        return self._set(message)
+
 
     @property
     def name(self):
@@ -258,7 +310,7 @@ class Light(object):
     def colortemp_k(self):
         '''Get or set the color temperature of the light, in units of Kelvin [2000-6500]'''
         self._colortemp = self._get('ct')
-        return int(round(1e6 / self._colortemp))
+        return kelvinToMired(self._colortemp, as_int=True)
 
     @colortemp_k.setter
     def colortemp_k(self, value):
@@ -269,7 +321,7 @@ class Light(object):
             logger.warn('2000 K is min allowed color temp')
             value = 2000
 
-        colortemp_mireds = int(round(1e6 / value))
+        colortemp_mireds = kelvinToMired(value, as_int=True)
         logger.debug("{0:d} K is {1} mireds".format(value, colortemp_mireds))
         self.colortemp = colortemp_mireds
 
@@ -896,8 +948,12 @@ class Bridge(object):
                     converted_light = self.get_light_id_by_name(light)
                 else:
                     converted_light = light
+                if 'config' in data.keys():
+                    light_dir = '/'
+                else:
+                    light_dir = '/state'
                 result.append(self.request('PUT', '/api/' + self.username + '/lights/' + str(
-                    converted_light) + '/state', data))
+                    converted_light) + light_dir, data))
             if 'error' in list(result[-1][0].keys()):
                 logger.warn("ERROR: {0} for light {1}".format(
                     result[-1][0]['error']['description'], light))
