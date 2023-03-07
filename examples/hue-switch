@@ -1,0 +1,75 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*- 
+
+from phue import Bridge, Group, Light
+import logging, sys
+
+logging.basicConfig()
+
+b = Bridge('192.168.0.246')
+
+#b.connect()
+
+def dispstate(id):
+    on = b.get_light(int(id), 'on')
+    l = Light(b, int(id))
+    pic = "◎ "
+    if (on):
+        pic = "◉ "
+    if (l.type == "Color temperature light"):
+        ltype = 1
+        print(pic + str(id) + " " + l.name + " [" + str(l.brightness) + "] " + str(l.colortemp_k) + "°")
+    elif (l.type == "Extended color light"):
+        ltype = 2
+        print(pic + str(id) + " " + l.name + " [" + str(l.brightness) + "] " + str(hex(l.hue)))
+    else:
+        ltype = 0 # Basic light
+        print(pic + str(id) + " " + l.name + " [" + str(l.brightness) + "] ")
+
+if (len(sys.argv) == 1):
+    for l in b.lights:
+        id = b.get_light_id_by_name(l.name)
+        dispstate(id)
+    for l in b.groups:
+
+        if (l.recycle):
+            continue
+
+        id = b.get_group_id_by_name(l.name) + 100
+        print("⸪  " +str(id) + " " +  l.name),
+        for x in b.scenes:
+            # print(str(x.group) + "-" + str(id))
+            if (not x.recycle and str(x.group) == str(id-100)):
+                print(" ☀ " + x.name),
+        print("")
+            
+else:
+    id = int(sys.argv[1])
+    if (id < 100):
+        cur = b.get_light(id, 'on')
+        if (len(sys.argv) > 2):
+            b.set_light(id, 'on', True)
+            b.set_light(id,'bri',int(sys.argv[2]))
+        else:
+            b.set_light(id, 'on', not cur)
+        dispstate(id)
+
+    else:
+        cur = b.get_group(id-100, 'on')
+        b.set_group(id-100, 'on', not cur)
+        if (len(sys.argv) > 2):
+            n = Group(b,(id-100))
+            # print("on+scene " + n.name)
+            b.run_scene(n.name ,sys.argv[2])
+        else:
+            # print("switch")
+            b.set_group(id-100, 'on', not cur)
+            if (not cur):
+                for x in b.scenes:
+                    # print(str(x.group) + "-" + str(id))
+                    if (x.group == str(id-100)):
+                        print("☀ " + x.name)
+
+
+
+

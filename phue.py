@@ -38,7 +38,7 @@ if platform.system() == 'Windows':
 else:
     USER_HOME = 'HOME'
 
-__version__ = '1.2'
+__version__ = '1.1'
 
 
 def is_string(data):
@@ -468,6 +468,8 @@ class Group(Light):
         self._any_on = None
         self._all_on = None
 
+        self._recycle = None
+
         try:
             self.group_id = int(group_id)
         except:
@@ -536,6 +538,12 @@ class Group(Light):
         logger.debug("Setting lights in group {0} to {1}".format(
             self.group_id, str(value)))
         self._set('lights', value)
+
+    @property
+    def recycle(self):
+        ''' True if this resource should be automatically removed when the last reference to it disappears [bool]'''
+        self._recycle = self._get('recycle')
+        return self._recycle
 
 
 class AllLights(Group):
@@ -1055,13 +1063,13 @@ class Bridge(object):
         if is_string(group_id):
             group_id = self.get_group_id_by_name(group_id)
         if group_id is False:
-            logger.error('Group name does not exist')
+            logger.error('Group name does not exit')
             return
         if group_id is None:
             return self.request('GET', '/api/' + self.username + '/groups/')
         if parameter is None:
             return self.request('GET', '/api/' + self.username + '/groups/' + str(group_id))
-        elif parameter == 'name' or parameter == 'lights':
+        elif parameter == 'name' or parameter == 'lights' or parameter == 'recycle':
             return self.request('GET', '/api/' + self.username + '/groups/' + str(group_id))[parameter]
         elif parameter in ('any_on', 'all_on'):
             return self.request('GET', '/api/' + self.username + '/groups/' + str(group_id))['state'][parameter]
@@ -1101,7 +1109,7 @@ class Bridge(object):
             else:
                 converted_group = group
             if converted_group is False:
-                logger.error('Group name does not exist')
+                logger.error('Group name does not exit')
                 return
             if parameter == 'name' or parameter == 'lights':
                 result.append(self.request('PUT', '/api/' + self.username + '/groups/' + str(converted_group), data))
