@@ -1,0 +1,96 @@
+#!/usr/bin/python
+from Tkinter import *
+import ttk
+from tkColorChooser import askcolor
+from phue import Bridge
+
+import colorsys as cs
+
+'''
+This example creates two slider for each light
+one for brightness and the other for temperature.
+There's also a color button which allows to controll
+the lamps color.
+'''
+
+b = Bridge() # Enter bridge IP here.
+
+#If running for the first time, press button on bridge and run with b.connect() uncommented
+#b.connect()
+
+#Functions
+getState = lambda light: b.get_light(light.light_id)["state"]
+setLamp  = lambda light, cmd: b.set_light(light.light_id, cmd)
+
+def colorCMD(light):
+    lamp = getState(light)
+    hsv = (lamp["hue"]/65535.0, lamp["sat"]/255.0, 1)
+
+    initial_color = tuple( [255*z for z in cs.hsv_to_rgb(*hsv)] )
+
+    (triplet, string) = askcolor(initial_color)
+
+    if triplet is not None:
+
+        print triplet
+        if all(c>= 240 for c in triplet):
+            light.colortemp_k = 6500
+        else:
+            s_color = tuple([z/255.0 for z in triplet])
+            (h,s,v) = cs.rgb_to_hsv(*s_color)
+            cmd = {"hue": int(h*0xFFFF), "sat": int(s*0xFF)}
+            setLamp(light, cmd)
+
+root = Tk()
+
+horizontal_frame = Frame(root)
+horizontal_frame.pack()
+
+lights = b.get_light_objects('id')
+
+for light_id in lights:
+    channel_frame = Frame(horizontal_frame)
+    channel_frame.pack(side = LEFT)
+
+    slider_frame = Frame(channel_frame)
+    slider_frame.pack()
+
+
+    # Color
+    button_c_cmd = lambda light_id=light_id: colorCMD(lights[light_id])
+    button_c = Button(channel_frame, text="Color", command=button_c_cmd)
+    button_c.pack()
+    # Temp
+    label_ct_v = Label(slider_frame)
+    label_ct_v.config(text = "Temperature", wraplength=1)
+    label_ct_v.pack(side = LEFT)
+
+    scale_ct_cmd = lambda x, light_id=light_id: b.set_light(light_id, {'ct': int(x), 'transitiontime':1})
+    scale_ct = Scale(slider_frame, from_ = 500, to = 154, command = scale_ct_cmd, length = 200, showvalue = 0)
+    scale_ct.set(b.get_light(light_id, 'ct'))
+    scale_ct.pack(side = LEFT)
+
+    separator_ct_bri_v = ttk.Separator(slider_frame, orient=VERTICAL)
+    separator_ct_bri_v.pack(side = LEFT, fill=Y, padx=10)
+
+    # All
+    label_bri_v = Label(slider_frame)
+    label_bri_v.config(text = "Brightness", wraplength=1)
+    label_bri_v.pack(side = LEFT)
+
+    scale_command = lambda x, light_id=light_id: b.set_light(light_id,{'bri': int(x), 'transitiontime': 1})
+    scale = Scale(slider_frame, from_ = 254, to = 0, command = scale_command, length = 200, showvalue = 0)
+    scale.set(b.get_light(light_id,'bri'))
+    scale.pack(side = LEFT)
+
+    button_var = BooleanVar()
+    button_var.set(b.get_light(light_id, 'on'))
+    button_command = lambda button_var=button_var, light_id=light_id: b.set_light(light_id, 'on', button_var.get())
+    button = Checkbutton(channel_frame, variable = button_var, command = button_command)
+    button.pack()
+
+    label = Label(channel_frame)
+    label.config(text = b.get_light(light_id,'name'))
+    label.pack()
+
+root.mainloop()
