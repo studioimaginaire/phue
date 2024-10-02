@@ -865,6 +865,7 @@ class Bridge(object):
 
         light_id can be a single lamp or an array of lamps
         parameters: 'on' : True|False , 'bri' : 0-254, 'sat' : 0-254, 'ct': 154-500
+                    'xy' : [0.0-1.0, 0.0-1.0]
 
         transitiontime : in **deciseconds**, time for this transition to take place
                          Note that transitiontime only applies to *this* light
