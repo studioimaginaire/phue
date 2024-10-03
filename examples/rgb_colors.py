@@ -20,13 +20,13 @@ def rgb_to_xy(red, green, blue):
     blue =  pow((blue + 0.055) / (1.0 + 0.055), 2.4) if blue > 0.04045 else (blue / 12.92)
 
     # convert rgb to xyz
-    x = red * 0.649926 + green * 0.103455 + blue * 0.197109
-    y = red * 0.234327 + green * 0.743075 + blue * 0.022598
-    z = green * 0.053077 + blue * 1.035763
+    X = red * 0.649926 + green * 0.103455 + blue * 0.197109
+    Y = red * 0.234327 + green * 0.743075 + blue * 0.022598
+    Z = green * 0.053077 + blue * 1.035763
 
     # convert xyz to xy
-    x = x / (x + y + z)
-    y = y / (x + y + z)
+    x = X / (X + Y + Z)
+    y = Y / (X + Y + Z)
 
     # TODO check color gamut if known
      
