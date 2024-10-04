@@ -156,8 +156,6 @@ class Light(object):
 
         # Some added code here to work around known bug where
         # turning off with transitiontime set makes it restart on brightness = 1
-        # see
-        # http://www.everyhue.com/vanilla/discussion/204/bug-with-brightness-when-requesting-ontrue-transitiontime5
 
         # if we're turning off, save whether this bug in the hardware has been
         # invoked
