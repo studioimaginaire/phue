@@ -6,3 +6,6 @@ test.py
 *.sublime-workspace
 dist
 MANIFEST
+.python_hue
+lights.json
+.venv

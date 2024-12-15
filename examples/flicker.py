@@ -1,7 +1,7 @@
 import random
 from time import sleep
 from phue import Bridge
-b = Bridge('192.168.0.23')
+b = Bridge()
 b.connect()
 lights = b.lights
 

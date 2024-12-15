@@ -3,6 +3,7 @@
 # in the time specified in totalTime
 from phue import Bridge
 import random
+from time import sleep
 
 b = Bridge() # Enter bridge IP here.
 

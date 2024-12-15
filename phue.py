@@ -621,12 +621,14 @@ class Bridge(object):
 
         if config_file_path is not None:
             self.config_file_path = config_file_path
+        elif os.access(os.path.join(os.getcwd(), '.python_hue'), os.R_OK):
+            self.config_file_path = os.path.join(os.getcwd(), '.python_hue')
         elif os.getenv(USER_HOME) is not None and os.access(os.getenv(USER_HOME), os.W_OK):
             self.config_file_path = os.path.join(os.getenv(USER_HOME), '.python_hue')
         elif 'iPad' in platform.machine() or 'iPhone' in platform.machine() or 'iPad' in platform.machine():
             self.config_file_path = os.path.join(os.getenv(USER_HOME), 'Documents', '.python_hue')
         else:
-            self.config_file_path = os.path.join(os.getcwd(), '.python_hue')
+            logger.exception('Could not retrieve bridge connection configuration.')
 
         self.ip = ip
         self.username = username
