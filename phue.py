@@ -248,9 +248,9 @@ class Light(object):
     @colortemp.setter
     def colortemp(self, value):
         if value < 154:
-            logger.warn('154 mireds is coolest allowed color temp')
+            logger.warning('154 mireds is coolest allowed color temp')
         elif value > 500:
-            logger.warn('500 mireds is warmest allowed color temp')
+            logger.warning('500 mireds is warmest allowed color temp')
         self._colortemp = value
         self._set('ct', self._colortemp)
 
@@ -263,10 +263,10 @@ class Light(object):
     @colortemp_k.setter
     def colortemp_k(self, value):
         if value > 6500:
-            logger.warn('6500 K is max allowed color temp')
+            logger.warning('6500 K is max allowed color temp')
             value = 6500
         elif value < 2000:
-            logger.warn('2000 K is min allowed color temp')
+            logger.warning('2000 K is min allowed color temp')
             value = 2000
 
         colortemp_mireds = int(round(1e6 / value))
@@ -900,7 +900,7 @@ class Bridge(object):
                 result.append(self.request('PUT', '/api/' + self.username + '/lights/' + str(
                     converted_light) + '/state', data))
             if 'error' in list(result[-1][0].keys()):
-                logger.warn("ERROR: {0} for light {1}".format(
+                logger.warning("ERROR: {0} for light {1}".format(
                     result[-1][0]['error']['description'], light))
 
         logger.debug(result)
@@ -978,7 +978,7 @@ class Bridge(object):
         result = self.request('PUT', '/api/' + self.username + '/sensors/' + str(
             sensor_id), data)
         if 'error' in list(result[0].keys()):
-            logger.warn("ERROR: {0} for sensor {1}".format(
+            logger.warning("ERROR: {0} for sensor {1}".format(
                 result[0]['error']['description'], sensor_id))
 
         logger.debug(result)
@@ -1023,7 +1023,7 @@ class Bridge(object):
         result = self.request('PUT', '/api/' + self.username + '/sensors/' + str(
             sensor_id) + "/" + structure, data)
         if 'error' in list(result[0].keys()):
-            logger.warn("ERROR: {0} for sensor {1}".format(
+            logger.warning("ERROR: {0} for sensor {1}".format(
                 result[0]['error']['description'], sensor_id))
 
         logger.debug(result)
@@ -1110,7 +1110,7 @@ class Bridge(object):
                 result.append(self.request('PUT', '/api/' + self.username + '/groups/' + str(converted_group) + '/action', data))
 
         if 'error' in list(result[-1][0].keys()):
-            logger.warn("ERROR: {0} for group {1}".format(
+            logger.warning("ERROR: {0} for group {1}".format(
                 result[-1][0]['error']['description'], group))
 
         logger.debug(result)
@@ -1199,11 +1199,11 @@ class Bridge(object):
         groups = [x for x in self.groups if x.name == group_name]
         scenes = [x for x in self.scenes if x.name == scene_name]
         if len(groups) != 1:
-            logger.warn("run_scene: More than 1 group found by name {}".format(group_name))
+            logger.warning("run_scene: More than 1 group found by name {}".format(group_name))
             return False
         group = groups[0]
         if len(scenes) == 0:
-            logger.warn("run_scene: No scene found {}".format(scene_name))
+            logger.warning("run_scene: No scene found {}".format(scene_name))
             return False
         if len(scenes) == 1:
             self.activate_scene(group.group_id, scenes[0].scene_id, transition_time)
@@ -1215,7 +1215,7 @@ class Bridge(object):
             if group_lights == scene.lights:
                 self.activate_scene(group.group_id, scene.scene_id, transition_time)
                 return True
-        logger.warn("run_scene: did not find a scene: {} "
+        logger.warning("run_scene: did not find a scene: {} "
                     "that shared lights with group {}".format(scene_name, group_name))
         return False
 
