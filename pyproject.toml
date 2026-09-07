@@ -1,0 +1,63 @@
+[project]
+name = "phue2"
+dynamic = ["version"]
+description = "A Philips Hue Python library"
+authors = [{ name = "Nathanaël Lécaudé" }, { name = "Nathan Nowack" }]
+dependencies = ["httpx>=0.28", "pydantic>=2.10"]
+requires-python = ">=3.10"
+readme = "README.md"
+license = { text = "MIT" }
+
+[dependency-groups]
+dev = [
+    "pre-commit",
+    "pyright>=1.1.389",
+    "pytest>=8.3.3",
+    "pytest-asyncio>=0.23.5",
+    "pytest-flakefinder",
+    "pytest-xdist>=3.6.1",
+    "ruff",
+    "respx>=0.22.0",
+]
+
+
+[build-system]
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/phue"]
+
+[tool.hatch.version]
+source = "vcs"
+
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "session"
+filterwarnings = []
+
+
+[tool.pyright]
+include = ["src", "tests"]
+exclude = [
+    "**/node_modules",
+    "**/__pycache__",
+    ".venv",
+    ".git",
+    "dist",
+    "*.egg-info",
+]
+pythonVersion = "3.10"
+typeCheckingMode = "strict"
+reportMissingImports = true
+reportMissingTypeStubs = false
+useLibraryCodeForTypes = true
+venvPath = "."
+venv = ".venv"
+
+[tool.ruff.lint]
+extend-select = ["I", "UP"]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401", "I001", "RUF013"]

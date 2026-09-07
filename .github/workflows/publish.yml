@@ -1,0 +1,26 @@
+name: Publish phue to PyPI
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  pypi-publish:
+    name: Upload to PyPI
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: "Install uv"
+        uses: astral-sh/setup-uv@v3
+
+      - name: Build
+        run: uv build --no-cache
+
+      - name: Publish to PyPi
+        run: uv publish -v dist/* --token ${{ secrets.UV_PUBLISH_TOKEN }}

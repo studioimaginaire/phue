@@ -1,5 +1,12 @@
 # phue changelog
 
+## r12
+- split functionality into modules
+- added `httpx` dependency
+- dropped support for python 2 and python <3.10
+- updated packaging and tooling
+- added complete type hints and lint checks
+
 ## r11
 - Add support for deleting scenes
 - Various bug fixes
